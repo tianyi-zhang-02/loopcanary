@@ -147,8 +147,14 @@ uv sync --all-extras
 Once on PyPI (post-Phase 2):
 
 ```bash
-pip install trajaudit
+pip install trajaudit                  # core: Pydantic schema + Typer CLI only
+pip install "trajaudit[llm]"           # Layer 3 providers (anthropic, openai)
+pip install "trajaudit[sandbox]"       # Layer 1 Docker sandbox
+pip install "trajaudit[llm,sandbox]"   # full local install
 ```
+
+The runtime install is intentionally slim — the LLM-provider and Docker
+dependencies are only required once the corresponding layers are enabled.
 
 ## Citation
 
