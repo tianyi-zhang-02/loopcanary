@@ -1,0 +1,57 @@
+# Followups
+
+Out-of-scope items noticed during the post-audit refactor (commits
+9aa2160 → 25839b1). None block Phase 1.
+
+## Schema
+
+- **`HarnessResult` vs. `ScoringEvent` overlap.** `Trajectory` has a
+  top-level `harness_result: HarnessResult | None` and the event stream
+  can now carry `ScoringEvent`s. Adapters could be made to emit a
+  closing `ScoringEvent` instead, with `harness_result` becoming a
+  derived convenience property. Reconcile in Phase 1 once at least one
+  adapter is real.
+- **Sunset date for deprecated `Step` / `StepType` / `FileEdit` /
+  `ShellCommand`.** Currently labelled "one release cycle." Pick a
+  concrete version (e.g. drop in 0.2.0) before the first release.
+- **Typed metadata on events.** `ToolCallEvent.metadata`,
+  `ObservationEvent.metadata`, `ReasoningEvent.metadata` are
+  `dict[str, Any]`. For known fields (e.g. token usage, latency), a
+  typed sidecar would catch typos. Worth doing only after a real
+  adapter shows what fields recur.
+- **`escalated_from: str | None` could be an enum.** Once the provider
+  list is stable (vllm-qwen2.5-7b, anthropic-claude-opus, …), promote
+  to a `ProviderTier` StrEnum the same way `TaxonomyTag` was promoted.
+
+## Validation
+
+- **Composition policy spec.** `AuditVerdict.compose` is still a
+  `NotImplementedError` with the policy described only in the
+  docstring. Worth a dedicated design doc + unit tests before Phase 5,
+  especially around the `UNCERTAIN` ↔ `SUSPECT` boundary.
+- **`ToolCallEvent.arguments` default.** Currently required. If real
+  adapters routinely pass `arguments={}`, switch to
+  `Field(default_factory=dict)` for ergonomics.
+- **Round-trip via `model_dump()` (not just JSON).** Current tests
+  cover JSON round-trip. Adding a `model_dump()` / `model_validate()`
+  test would catch Python-side discriminator mishandling, separately
+  from JSON serialization.
+
+## Docs
+
+- **`docs/pivot_review.md` is referenced but missing.** The refactor
+  prompt pointed at it for context; the inline summary was enough this
+  time, but the file should exist so it can be referenced again.
+- **Update `docs/architecture.md` to reflect the unified event stream.**
+  The architecture doc may still describe the three-list shape. Audit
+  on next docs pass.
+- **Migration example in CHANGELOG / release notes** when 0.1.0 lands —
+  the old-vs-new snippet in `refactor_summary.md` is reusable.
+
+## Tooling
+
+- **Phantom-dep import test.** A small test that imports each
+  `optional-dependencies` group's modules under conditional skips
+  would catch the next round of phantom deps automatically.
+- **CI matrix is `[3.11, 3.12]` only.** Add 3.13 once it's broadly
+  available in `setup-python@v5`.
