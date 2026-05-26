@@ -68,3 +68,39 @@ differentiate on something concrete: a larger ordinary-positive-rate
 sample, multiple operating points, multi-monitor comparison, obfuscation
 robustness, or released artefacts. "We did calibration on MALT" is not
 enough. See `docs/pivot_decision.md` for the synthesis.
+
+## Live-load smoke test (v0.1 status)
+
+Status: **NOT RUN.** The HF token in the sandbox remains invalid
+(`Invalid user token` from `hf auth whoami`). The v0.1 MALT adapter at
+`src/trajaudit/adapters/malt.py` is fully implemented and is exercised by
+15 fixture-driven unit tests under `tests/adapters/`, but the live load
+against `metr-evals/malt-public` has not been executed in this session.
+
+What works without live data:
+- Conversion from MALT-style row dicts to `Trajectory` (15 tests).
+- Event-type mapping (reasoning / tool call / observation / scoring).
+- `call_id` preservation when MALT provides ids and synthesis when it doesn't.
+- Synthetic timestamp generation (epoch `2025-01-01T00:00:00 UTC` +
+  `index * 1 second`).
+- `Trajectory.metadata` carries labels / `manually_reviewed` / `run_source`
+  / `has_chain_of_thought`; labels do not leak into the event stream.
+- `load_malt_split` raises a clear `RuntimeError` with setup instructions
+  when `HF_TOKEN` is missing.
+
+What still needs a live load to verify:
+- Whether MALT's actual on-disk column layout matches the schema this
+  adapter targets (described in the docstring of `malt.py`). Fixture
+  shapes were inferred from the HF dataset card; if MALT exposes a
+  different field name for, say, `manually_reviewed`, the
+  `malt_row_to_trajectory` mapping will need a one-line tweak.
+- Whether `samples[0]` is the right slice for the N-completion case
+  (v0.1 takes the first sample only).
+- Final-shape regression check: load the first ~10 manually-reviewed
+  rows, run `malt_row_to_trajectory`, verify event-count distributions
+  look plausible.
+
+To unblock: generate an HF read token at
+https://huggingface.co/settings/tokens, accept the dataset terms at
+https://huggingface.co/datasets/metr-evals/malt-public, and export
+`HF_TOKEN` in the shell that runs `trajaudit run`.
