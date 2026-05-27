@@ -24,7 +24,6 @@ from rich.console import Console
 
 from trajaudit.adapters.malt import load_malt_split
 from trajaudit.core.trajectory import Trajectory
-from trajaudit.monitors import Monitor
 from trajaudit.monitors.metr_prompt import METRPromptMonitor
 from trajaudit.report import ReportCard, ScoreRecord, compute_report
 from trajaudit.transformations import apply_structural_battery
@@ -167,7 +166,10 @@ def run(
         raise typer.Exit(code=2)
 
     # ---- Construct the monitor -------------------------------------------
-    monitor_obj: Monitor = METRPromptMonitor()
+    # Concrete type (not the Monitor protocol) so mypy resolves the
+    # cost-tracking attributes the CLI reads (total_cost_usd, calls). The
+    # protocol surface is still validated by isinstance(...) in the tests.
+    monitor_obj = METRPromptMonitor()
 
     # ---- Load + balance ---------------------------------------------------
     console.print(f"[bold]Loading MALT[/] (subset={subset}, target n={limit})…")
@@ -190,9 +192,9 @@ def run(
     records: list[ScoreRecord] = []
     budget_hit = False
     for i, traj in enumerate(trajectories, start=1):
-        if monitor_obj.total_cost_usd >= budget_usd:  # type: ignore[attr-defined]
+        if monitor_obj.total_cost_usd >= budget_usd:
             console.print(
-                f"[yellow]Budget cap reached[/] (${monitor_obj.total_cost_usd:.2f} >= ${budget_usd:.2f}); "  # type: ignore[attr-defined]
+                f"[yellow]Budget cap reached[/] (${monitor_obj.total_cost_usd:.2f} >= ${budget_usd:.2f}); "
                 f"stopping after {i - 1}/{len(trajectories)} trajectories."
             )
             budget_hit = True
@@ -231,7 +233,7 @@ def run(
                     abstain=verdict.abstain,
                 )
             )
-        spend = monitor_obj.total_cost_usd  # type: ignore[attr-defined]
+        spend = monitor_obj.total_cost_usd
         console.print(
             f"[{i}/{len(trajectories)}] {traj.trajectory_id}: "
             f"scored 4 variants (${spend:.2f} / ${budget_usd:.2f})"
@@ -247,8 +249,8 @@ def run(
     _write_records(records, report, out_path)
     console.print(f"\n[bold green]Records written to[/] {out_path}")
     console.print(
-        f"Total API spend: ${monitor_obj.total_cost_usd:.4f} "  # type: ignore[attr-defined]
-        f"({monitor_obj.calls} calls)"  # type: ignore[attr-defined]
+        f"Total API spend: ${monitor_obj.total_cost_usd:.4f} "
+        f"({monitor_obj.calls} calls)"
     )
     if budget_hit:
         console.print(
