@@ -433,7 +433,11 @@ def load_malt_split(
 
     yielded = 0
     for row in ds:
-        if subset == "manually_reviewed" and not row.get("manually_reviewed", False):
+        # Real MALT nests manually_reviewed under row["metadata"]; fixtures
+        # may flatten it to the row top-level. Accept both.
+        md = row["metadata"] if isinstance(row.get("metadata"), dict) else {}
+        reviewed = bool(md.get("manually_reviewed") or row.get("manually_reviewed", False))
+        if subset == "manually_reviewed" and not reviewed:
             continue
         yield malt_row_to_trajectory(dict(row))
         yielded += 1
