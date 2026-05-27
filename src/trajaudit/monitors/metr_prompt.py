@@ -81,6 +81,8 @@ _SCORE_RE = re.compile(r'"score"\s*:\s*"?(\d{1,2})"?', re.IGNORECASE)
 
 # Context-window guardrail for Claude Sonnet 4.7 (200k tokens) minus an 8k
 # safety margin for the prompt scaffold + max_tokens output budget.
+# TODO: parameterize context window — currently hardcoded for claude-sonnet-4-7.
+# Move to a per-model lookup when v0.2 adds OpenAI / open-weight monitor families.
 _DEFAULT_CONTEXT_WINDOW = 200_000
 _DEFAULT_SAFETY_MARGIN = 8_000
 
