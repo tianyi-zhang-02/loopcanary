@@ -35,8 +35,11 @@ of content blocks), that long transcripts are not truncated mid-tool-call,
 and that the label column is a list of strings matching the public count
 breakdown (103 unprompted reward-hacking positives across two labels).
 The pivot brief asked us to verify METR's reported 2,690 manually-reviewed
-runs — the HF card confirms 1,014 benign + 1,676 with observed behaviour =
-2,690. ✓
+runs. The HF card's published breakdown is 1,014 benign + 1,676 with
+observed behaviour = 2,690, but that count applies to the full dataset.
+The **public split contains 1,826 manually-reviewed rows** as observed
+on-disk during Phase 3 of the v0.1 implementation; the ~864-row gap
+corresponds to internal-only tasks not present in the public release.
 
 **Reproduction caveat (METR prompt).** The pivot brief asserted METR uses
 a 1-100 scale; the verbatim prompt fetched from the METR blog uses a 0-10
@@ -104,3 +107,41 @@ To unblock: generate an HF read token at
 https://huggingface.co/settings/tokens, accept the dataset terms at
 https://huggingface.co/datasets/metr-evals/malt-public, and export
 `HF_TOKEN` in the shell that runs `trajaudit run`.
+
+## Schema note — what the on-disk MALT row actually looks like
+
+Discovered during Phase 3 of the v0.1 implementation. The HuggingFace
+dataset card describes MALT in idealised terms; the on-disk layout
+differs in several load-bearing ways. Anyone writing a new adapter
+against the card alone will hit the same bugs the v0.1 adapter did.
+Canonical reference for the real format is the four fix commits on
+the v0.1 PR branch: `9658035`, `2d6d8cf`, `ce25645`, `8532cc1`.
+
+The actual on-disk shape:
+
+- **Top-level row keys are exactly two:** `samples` and `metadata`.
+  Every metadata field the card describes (`labels`,
+  `manually_reviewed`, `run_source`, `has_chain_of_thought`, `model`,
+  `task_id`, `run_id`, `public`) is nested under `row["metadata"]`,
+  *not* at the row top level. Filters that read `row["manually_reviewed"]`
+  silently return False for every row.
+- **The sample's message fields are `input` and `output`,** not
+  `input_messages` and `output_messages`.
+- **`output` is `list[list[dict]]`** — one outer list per completion
+  (MALT supports N completions per call), and each completion is
+  itself a list of messages. Adapters that index `output[0]` and
+  expect a single message dict will see a list and misroute.
+- **Messages use OpenAI chat-completion format**, not Anthropic
+  content-block format. Tool calls live on
+  `msg["function_call"] = {"name", "arguments"}` with `arguments` as
+  a JSON-encoded string. Tool responses come back as `role="function"`
+  messages with `name` and `content`. There are no
+  `{"type": "tool_use"}` blocks.
+- **`role == "developer"` exists** alongside `"system"` and should be
+  treated as a framing role that emits no event.
+- **The HuggingFace `split` argument must be `"public"`,** not the
+  default `"train"`. Passing `split="train"` raises
+  `ValueError: Unknown split "train". Should be one of ['public']`.
+- **HF auth** can come from either `HF_TOKEN` env or the cached token
+  written by `hf auth login` — accept both via
+  `huggingface_hub.get_token()`.
