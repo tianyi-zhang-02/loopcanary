@@ -74,6 +74,9 @@ place (`Trajectory`, `Step`, `SemanticVerdict`, `AuditVerdict`); every
 runtime function raises `NotImplementedError`. See the roadmap for what
 lands when.
 
+For current state and collaboration protocols, see
+[docs/PROJECT_STATE.md](docs/PROJECT_STATE.md).
+
 ## Roadmap
 
 - [x] **Phase 0 — Scaffold.** Package skeleton, CI, docs, stub modules,
