@@ -1,5 +1,7 @@
 # Followups
 
+> Open follow-ups. See `docs/PROJECT_STATE.md` for canonical project state.
+
 Out-of-scope items noticed during the post-audit refactor (commits
 9aa2160 → 25839b1). None block Phase 1.
 
