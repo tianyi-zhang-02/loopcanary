@@ -1,5 +1,7 @@
 # Followups
 
+> Open follow-ups. See `docs/PROJECT_STATE.md` for canonical project state.
+
 Out-of-scope items noticed across sessions, classified Open / Resolved /
 Abandoned during the pre-merge cleanup pass on PR #1 (2026-05-27). None
 of the Open items block PR #1 merge — they are v0.1.1 / v0.2+ work.

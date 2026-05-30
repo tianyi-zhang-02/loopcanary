@@ -79,6 +79,9 @@ transformations. Live-MALT smoke test pending HF auth in the release
 environment. See [docs/spec.md](docs/spec.md) for the canonical surface
 and [docs/followups.md](docs/followups.md) for what's deferred to v0.2+.
 
+For current state and collaboration protocols, see
+[docs/PROJECT_STATE.md](docs/PROJECT_STATE.md).
+
 ## Installation
 
 Not yet on PyPI; install from source via `uv sync --all-extras`. Post-PyPI:
