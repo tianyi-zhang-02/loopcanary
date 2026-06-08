@@ -57,3 +57,6 @@ artifacts/
 notebooks/malt_recon_outputs.json
 notebooks/*_outputs.json
 notebooks/*.parquet
+
+# CLI per-run records (written to repo root by `monitorstress run --output`)
+monitorstress_run_*.json

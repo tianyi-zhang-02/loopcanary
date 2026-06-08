@@ -45,7 +45,7 @@ before the first run.
 Worst-case degradation: -0.XXX AUROC on <transformation>.
 ```
 
-Real numbers will appear in [docs/v01_first_run.md](docs/v01_first_run.md) once the first live run is committed. Raw per-trajectory scores are written to `./trajaudit_run_<UTC timestamp>.json` for downstream analysis.
+Real numbers will appear in [docs/v01_first_run.md](docs/v01_first_run.md) once the first live run is committed. Raw per-trajectory scores are written to `./monitorstress_run_<UTC timestamp>.json` for downstream analysis.
 
 ## CLI options
 

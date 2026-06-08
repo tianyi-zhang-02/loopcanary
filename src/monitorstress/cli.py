@@ -92,7 +92,7 @@ def _records_path(output: Path | None) -> Path:
     if output is not None:
         return output
     stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    return Path(f"./trajaudit_run_{stamp}.json")
+    return Path(f"./monitorstress_run_{stamp}.json")
 
 
 def _write_records(records: list[ScoreRecord], report: ReportCard, path: Path) -> None:
@@ -132,7 +132,7 @@ def run(
     ] = 5.0,
     output: Annotated[
         Path | None,
-        typer.Option("--output", "-o", help="Path for the raw scores JSON. Defaults to ./trajaudit_run_<timestamp>.json."),
+        typer.Option("--output", "-o", help="Path for the raw scores JSON. Defaults to ./monitorstress_run_<timestamp>.json."),
     ] = None,
 ) -> None:
     """Run the v0.1 stress-test pipeline against MALT."""
