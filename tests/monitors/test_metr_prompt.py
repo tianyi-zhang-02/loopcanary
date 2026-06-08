@@ -180,19 +180,64 @@ def test_non_transient_error_does_not_retry() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_cost_tracking_accumulates() -> None:
+def test_cost_tracking_accumulates_with_haiku_pricing() -> None:
+    """Default model (Haiku 4.5) → Haiku pricing ($1/$5 per MTok)."""
     client = _client_returning(
         '{"reason": "x", "score": 3}', input_tokens=2_000, output_tokens=100
     )
-    monitor = METRPromptMonitor(client=client)
+    monitor = METRPromptMonitor(client=client, model="claude-haiku-4-5-20251001")
     monitor.score(_trajectory())
     monitor.score(_trajectory())
     assert monitor.calls == 2
     assert monitor.total_input_tokens == 4_000
     assert monitor.total_output_tokens == 200
-    # 2000 in + 100 out × pricing: (2000 × 1/1e6) + (100 × 5/1e6) = 0.0025. × 2 calls = 0.005.
+    # Haiku pricing: (2000 × 1/1e6) + (100 × 5/1e6) = 0.0025 per call.
+    # × 2 calls = 0.005.
     assert monitor.total_cost_usd == pytest.approx(0.005, rel=1e-6)
     assert monitor.last_call_cost_usd == pytest.approx(0.0025, rel=1e-6)
+
+
+def test_cost_tracking_uses_sonnet_pricing_when_sonnet_model() -> None:
+    """Sonnet 4.5 → Sonnet pricing ($3/$15 per MTok)."""
+    client = _client_returning(
+        '{"reason": "x", "score": 3}', input_tokens=2_000, output_tokens=100
+    )
+    monitor = METRPromptMonitor(client=client, model="claude-sonnet-4-5-20250929")
+    monitor.score(_trajectory())
+    # Sonnet pricing: (2000 × 3/1e6) + (100 × 15/1e6) = 0.0075 per call.
+    assert monitor.last_call_cost_usd == pytest.approx(0.0075, rel=1e-6)
+    assert monitor.total_cost_usd == pytest.approx(0.0075, rel=1e-6)
+
+
+def test_pricing_table_contains_expected_models() -> None:
+    """The pricing lookup table is the single source of truth for cost math.
+
+    This test pins the contents so a silent change to pricing or to model
+    coverage breaks visibly rather than producing wrong dollar figures.
+    """
+    from monitorstress.monitors.metr_prompt import _PRICING_USD_PER_MTOK
+
+    assert _PRICING_USD_PER_MTOK["claude-haiku-4-5-20251001"] == (1.0, 5.0)
+    assert _PRICING_USD_PER_MTOK["claude-sonnet-4-5-20250929"] == (3.0, 15.0)
+    assert _PRICING_USD_PER_MTOK["claude-sonnet-4-6"] == (3.0, 15.0)
+
+
+def test_unknown_model_raises_clear_error_at_construction() -> None:
+    """The anti-footgun check: never silently mis-price an unknown model.
+
+    A typo or future model id that hasn't been added to the pricing table
+    must fail loudly at construction time, before any API call or
+    trajectory load. Listing the supported models in the error message
+    makes the fix obvious.
+    """
+    client = _client_returning('{"reason": "x", "score": 3}')
+    with pytest.raises(ValueError) as exc:
+        METRPromptMonitor(client=client, model="claude-totally-made-up")
+    msg = str(exc.value)
+    assert "Unsupported model" in msg
+    assert "claude-totally-made-up" in msg
+    assert "claude-haiku-4-5-20251001" in msg  # supported-models list present
+    assert "_PRICING_USD_PER_MTOK" in msg      # tells the reader where to add
 
 
 # ---------------------------------------------------------------------------

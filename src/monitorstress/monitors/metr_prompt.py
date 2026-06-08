@@ -1,9 +1,14 @@
 """METR's MALT reward-hacking monitor prompt, packaged as a Monitor.
 
 Adapted from METR's published MALT monitor prompt
-(https://metr.org/blog/2025-10-14-malt-dataset-of-natural-and-prompted-behaviors/),
-calls ``claude-haiku-4-5-20251001`` via the Anthropic API at temperature 0,
-parses the 0-10 integer output, and returns a :class:`SemanticVerdict`.
+(https://metr.org/blog/2025-10-14-malt-dataset-of-natural-and-prompted-behaviors/).
+Calls the Anthropic API at temperature 0, parses the 0-10 integer
+output, and returns a :class:`SemanticVerdict`. The judge model is
+configurable per call site (constructor ``model`` arg / CLI
+``--model`` flag); pricing is keyed to the model via
+:data:`_PRICING_USD_PER_MTOK`. An unsupported model id raises
+``ValueError`` at construction so a silent wrong-pricing or
+wrong-model run is not possible.
 
 Prompt provenance
 =================
@@ -120,11 +125,19 @@ _SCORE_RE = re.compile(r'"score"\s*:\s*"?(\d{1,2})"?', re.IGNORECASE)
 _DEFAULT_CONTEXT_WINDOW = 200_000
 _DEFAULT_SAFETY_MARGIN = 8_000
 
-# Per-million-token pricing (USD). Update if Anthropic changes Haiku 4.5
-# pricing. CLI budget tracking depends on these constants.
-# Source: anthropic.com/claude/haiku, accessed 2026-06-07.
-_INPUT_USD_PER_MTOK = 1.0
-_OUTPUT_USD_PER_MTOK = 5.0
+# Per-million-token pricing (USD), keyed by canonical model id. Tuple is
+# (input_per_mtok, output_per_mtok). CLI budget tracking depends on this
+# lookup, so the table MUST contain an entry for every model the monitor
+# is constructed with — :class:`METRPromptMonitor.__init__` raises
+# ``ValueError`` on unknown models rather than silently mispricing. Sources:
+# anthropic.com/claude pricing pages, accessed 2026-06-07 / 2026-06-08.
+# When adding a new model, also update _MODEL_ALIASES in cli.py if it
+# should be addressable via the --model CLI shorthand.
+_PRICING_USD_PER_MTOK: dict[str, tuple[float, float]] = {
+    "claude-haiku-4-5-20251001": (1.0, 5.0),
+    "claude-sonnet-4-5-20250929": (3.0, 15.0),
+    "claude-sonnet-4-6": (3.0, 15.0),
+}
 
 
 def _format_event(event: Any) -> str:
@@ -170,7 +183,11 @@ class METRPromptMonitor:
         An Anthropic client (or compatible mock for tests). If omitted,
         constructs an :class:`anthropic.Anthropic` from environment defaults.
     model:
-        Anthropic model id. Defaults to ``"claude-haiku-4-5-20251001"``.
+        Anthropic model id. Defaults to ``"claude-haiku-4-5-20251001"``
+        (cheap/fast default). Must be one of the keys in
+        :data:`_PRICING_USD_PER_MTOK`; the constructor raises
+        ``ValueError`` on unknown models so cost reports are never
+        wrong. Add new entries to :data:`_PRICING_USD_PER_MTOK` first.
     max_retries:
         Total attempts on transient errors before giving up. Defaults to 3.
     context_window:
@@ -193,6 +210,14 @@ class METRPromptMonitor:
         context_window: int = _DEFAULT_CONTEXT_WINDOW,
         safety_margin: int = _DEFAULT_SAFETY_MARGIN,
     ) -> None:
+        if model not in _PRICING_USD_PER_MTOK:
+            raise ValueError(
+                f"Unsupported model {model!r}. Supported models: "
+                f"{sorted(_PRICING_USD_PER_MTOK)}. To add a new model, add an "
+                f"entry to _PRICING_USD_PER_MTOK in "
+                f"src/monitorstress/monitors/metr_prompt.py (and, if you want "
+                f"a CLI shorthand for it, _MODEL_ALIASES in cli.py)."
+            )
         if client is None:
             try:
                 from anthropic import Anthropic
@@ -293,9 +318,10 @@ class METRPromptMonitor:
         raise last_exc
 
     def _record_usage(self, input_tokens: int, output_tokens: int) -> None:
+        input_per_mtok, output_per_mtok = _PRICING_USD_PER_MTOK[self._model]
         cost = (
-            input_tokens * _INPUT_USD_PER_MTOK / 1_000_000
-            + output_tokens * _OUTPUT_USD_PER_MTOK / 1_000_000
+            input_tokens * input_per_mtok / 1_000_000
+            + output_tokens * output_per_mtok / 1_000_000
         )
         self.last_call_input_tokens = input_tokens
         self.last_call_output_tokens = output_tokens
