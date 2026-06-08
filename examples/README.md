@@ -1,6 +1,6 @@
 # Examples
 
-> **SUPERSEDED.** This document describes an earlier framing of TrajAudit
+> **SUPERSEDED.** This document describes an earlier framing of monitorstress
 > (multi-layer benchmark-integrity audit with `swe_bench` / `terminal_bench`
 > example adapters). The current direction is a stress-test runner for AI
 > safety monitors — see [README.md](../README.md) and [docs/spec.md](../docs/spec.md).

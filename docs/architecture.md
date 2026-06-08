@@ -1,16 +1,16 @@
-# TrajAudit — Architecture
+# monitorstress — Architecture
 
-> **SUPERSEDED.** This document describes an earlier framing of TrajAudit
+> **SUPERSEDED.** This document describes an earlier framing of monitorstress
 > (multi-layer benchmark-integrity audit). The current direction is a
 > stress-test runner for AI safety monitors — see [README.md](../README.md)
 > and [docs/spec.md](spec.md). Retained for decision history.
 
 ## Goals and framing
 
-TrajAudit is a post-hoc, benchmark-agnostic audit framework. Given the
+monitorstress is a post-hoc, benchmark-agnostic audit framework. Given the
 trajectory an agent produced on a benchmark task — its actions, the files it
 touched, the shell commands it issued, and the harness's pass/fail verdict —
-TrajAudit decides whether the reported score reflects a genuine solution or
+monitorstress decides whether the reported score reflects a genuine solution or
 an exploit of the evaluation infrastructure.
 
 Two design choices distinguish the framework from prior work and shape every
@@ -23,12 +23,12 @@ module below them:
    specific judge tier — that produced it. A scalar score throws that
    information away.
 
-2. **Composed signals, not a single detector.** TrajAudit runs three
+2. **Composed signals, not a single detector.** monitorstress runs three
    independent layers with very different false-positive / false-negative
    profiles and exposes their *disagreement structure* rather than averaging
    it away. RewardHackingAgents (Atinafu & Cohen, Mar 2026) already
    demonstrates that workspace-integrity monitoring is a strong stand-alone
-   signal; TrajAudit's contribution is to treat that signal as one component
+   signal; monitorstress's contribution is to treat that signal as one component
    of a composed verdict, alongside syntactic AST scanning and an LLM judge.
 
 The decomposition draws on **COBA**-style component-based auditing (ICML
@@ -37,7 +37,7 @@ a holistic verdict.
 
 ## Public API: the verdict schemas
 
-The shapes in [`src/trajaudit/core/verdict.py`](../src/trajaudit/core/verdict.py)
+The shapes in [`src/monitorstress/core/verdict.py`](../src/monitorstress/core/verdict.py)
 are the framework's stable surface. Every downstream consumer — CLI,
 exporters, leaderboards, the `compare` subcommand — reads from these:
 
@@ -70,7 +70,7 @@ Layer 1 replays the trajectory in an isolated Docker sandbox and observes:
 - **Network activity**, where the benchmark normally forbids it.
 
 **Positioning.** Layer 1 overlaps in spirit with what RHA already does well.
-We are not claiming a wedge here. TrajAudit's contribution is not Layer 1 in
+We are not claiming a wedge here. monitorstress's contribution is not Layer 1 in
 isolation but the composition — Layer 1 emits structured `WorkspaceFinding`s
 that participate in the multi-layer verdict and feed the Layer 3 judge as
 context, rather than acting as a stand-alone decision.
@@ -155,7 +155,7 @@ The reporting layer turns `AuditVerdict`s into:
 
 - **Integrity-adjusted leaderboards** — raw vs. clean-only vs.
   non-exploit pass rates, in the COBA Table 6 style.
-- **`trajaudit compare`** — the framework's headline UX. Two submissions
+- **`monitorstress compare`** — the framework's headline UX. Two submissions
   whose raw pass-rates are close can move apart significantly once
   exploit-driven solves are removed; `compare` shows the rank diff
   explicitly.
@@ -164,8 +164,8 @@ The reporting layer turns `AuditVerdict`s into:
 
 ## Non-goals
 
-- TrajAudit does **not** re-run benchmarks. It audits what already
+- monitorstress does **not** re-run benchmarks. It audits what already
   happened.
-- TrajAudit does **not** try to prevent exploits during agent execution.
-- TrajAudit is **not** a general-purpose AI safety evaluator. Scope is
+- monitorstress does **not** try to prevent exploits during agent execution.
+- monitorstress is **not** a general-purpose AI safety evaluator. Scope is
   benchmark integrity.

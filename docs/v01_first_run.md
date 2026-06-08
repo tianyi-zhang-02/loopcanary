@@ -68,7 +68,7 @@ Monitor call failed on 112756/truncate_obs: TypeError('"Could not resolve …
 Monitor call failed on 112756/pad_noops: TypeError('"Could not resolve …
 [1/20] 112756: scored 4 variants ($0.00 / $3.00)
 …
-                       TrajAudit stress-test report card
+                       monitorstress stress-test report card
 ┏━━━━━━━━━━━━━━━━┳━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┓
 ┃ transformation ┃ n ┃ AUROC (95% CI) ┃ Δ AUROC (95% CI) ┃ FPR shift ┃ abstain ┃
 ┡━━━━━━━━━━━━━━━━╇━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━┩
@@ -87,7 +87,7 @@ record carries `abstain: true` and `monitor_score: null`.
 Two options for the user:
 
 1. **Run locally outside Claude Code.** Set `ANTHROPIC_API_KEY=sk-ant-...`
-   (a real key), unset `ANTHROPIC_BASE_URL`, run `trajaudit run --monitor metr
+   (a real key), unset `ANTHROPIC_BASE_URL`, run `monitorstress run --monitor metr
    --limit 20 --budget-usd 3.00` in any shell with HF auth configured.
 2. **Pass through the proxy auth.** If the session's proxy expects a
    bearer token rather than `api_key`, the v0.1 monitor would need an

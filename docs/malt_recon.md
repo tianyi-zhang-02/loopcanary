@@ -56,7 +56,7 @@ enough to be consistent with a wide range of true values.
 
 **Bottom line — is MALT usable for calibration claims?** Conditional on
 the HF auth issue being resolved, **MALT is usable as a substrate** for
-the kind of evaluation work TrajAudit is considering, with two binding
+the kind of evaluation work monitorstress is considering, with two binding
 constraints. (1) **Per-category sample sizes are tight.** 103 unprompted
 reward-hacking positives means bootstrap CIs on calibration metrics will
 be wider than ±0.05 at small bin counts (see notebook section 7's
@@ -76,7 +76,7 @@ enough. See `docs/pivot_decision.md` for the synthesis.
 
 Status: **NOT RUN.** The HF token in the sandbox remains invalid
 (`Invalid user token` from `hf auth whoami`). The v0.1 MALT adapter at
-`src/trajaudit/adapters/malt.py` is fully implemented and is exercised by
+`src/monitorstress/adapters/malt.py` is fully implemented and is exercised by
 15 fixture-driven unit tests under `tests/adapters/`, but the live load
 against `metr-evals/malt-public` has not been executed in this session.
 
@@ -106,7 +106,7 @@ What still needs a live load to verify:
 To unblock: generate an HF read token at
 https://huggingface.co/settings/tokens, accept the dataset terms at
 https://huggingface.co/datasets/metr-evals/malt-public, and export
-`HF_TOKEN` in the shell that runs `trajaudit run`.
+`HF_TOKEN` in the shell that runs `monitorstress run`.
 
 ## Schema note — what the on-disk MALT row actually looks like
 

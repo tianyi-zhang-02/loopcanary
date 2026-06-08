@@ -1,8 +1,8 @@
-# TrajAudit status report (PR #1 readiness review)
+# monitorstress status report (PR #1 readiness review)
 
 Read-only diagnostic, 2026-05-27. ~45 min of diff/doc review. Written to
 inform the merge decision on
-[PR #1](https://github.com/tianyi-zhang-02/trajaudit/pull/1). No code
+[PR #1](https://github.com/tianyi-zhang-02/monitorstress/pull/1). No code
 or doc changes made during this pass.
 
 ## TL;DR (read this first)
@@ -24,7 +24,7 @@ or doc changes made during this pass.
 | Commits ahead of `origin/main` | **16** |
 | Tests | **101** passing (1 smoke + 18 verdict/events + 20 adapter + 27 transformations + 12 monitor + 15 report + 9 CLI; ~12s wall) |
 | Lint | `ruff check .` — clean |
-| Type-check | `mypy src/trajaudit` — no issues, 38 files |
+| Type-check | `mypy src/monitorstress` — no issues, 38 files |
 | Python LOC in `src/` | **3,371** |
 | LOC in `tests/` | **1,542** |
 | LOC in `docs/` | **2,092** |
@@ -58,7 +58,7 @@ Per-commit (chronological), grouped by task:
 - `5bba744 feat(report): add report card computation and rendering`
 
 **Task 4 — CLI**
-- `4f0a956 feat(cli): add trajaudit run command`
+- `4f0a956 feat(cli): add monitorstress run command`
 
 **v0.1 docs**
 - `efc52d6 docs(v0.1): add spec.md, rewrite README, expand followups`
@@ -79,7 +79,7 @@ Per-commit (chronological), grouped by task:
 | Capability | Status | Evidence |
 |---|---|---|
 | MALT ingestion — fixture-driven | **working** | `tests/adapters/test_malt.py` (20 tests, including 5 against `real_shape_openai_function_call.json`) |
-| MALT ingestion — live HF download + load + filter | **working** (verified end-to-end in Phase 3, loaded 20 manually-reviewed trajectories balanced 10/10) | manual run via `trajaudit run …` |
+| MALT ingestion — live HF download + load + filter | **working** (verified end-to-end in Phase 3, loaded 20 manually-reviewed trajectories balanced 10/10) | manual run via `monitorstress run …` |
 | `drop_reasoning` transformation | **working** | `tests/transformations/test_drop_reasoning.py` (7 tests) |
 | `truncate_observations` transformation | **working** | `tests/transformations/test_truncate_observations.py` (9 tests) |
 | `pad_with_noops` transformation | **working** | `tests/transformations/test_pad_with_noops.py` (11 tests) |
@@ -87,7 +87,7 @@ Per-commit (chronological), grouped by task:
 | `Monitor` protocol | **working** (runtime-checkable; `isinstance(m, Monitor)` works) | `tests/monitors/test_metr_prompt.py::test_metr_monitor_satisfies_protocol` |
 | `METRPromptMonitor` — score/abstain/retry/cost-tracking | **working** (against mocked Anthropic client) | `tests/monitors/test_metr_prompt.py` (12 tests) |
 | `METRPromptMonitor` — live API call | **not validated** | Blocked on sandbox auth — see Q5 / `docs/v01_first_run.md` |
-| `trajaudit run` CLI — flags + validation + JSON output | **working** (hermetic) | `tests/test_cli.py` (9 tests) |
+| `monitorstress run` CLI — flags + validation + JSON output | **working** (hermetic) | `tests/test_cli.py` (9 tests) |
 | Report card — AUROC + bootstrap CI + Δ AUROC + FPR shift + Rich render | **working** (against synthetic records) | `tests/test_report.py` (15 tests) |
 | End-to-end pipeline (MALT → transformations → monitor → report) | **partial** — orchestration works, abstain path handles all failure modes; live API never executed because of auth blocker | Phase 3 log in `docs/v01_first_run.md` |
 
@@ -118,7 +118,7 @@ Ordered by severity. ~45 minutes of diff review.
 
 ### M1 — `compute_report` length-mismatch hazard *(medium)*
 
-`src/trajaudit/report.py:238-269`. The clean baseline builds two parallel
+`src/monitorstress/report.py:238-269`. The clean baseline builds two parallel
 numpy arrays:
 
 ```python
@@ -149,8 +149,8 @@ Producers of `ScoreRecord` in the codebase:
 
 | Site | Construction shape | Invariant maintained? |
 |---|---|---|
-| `src/trajaudit/cli.py:212-220` (monitor exception path) | `monitor_score=None, abstain=True` | ✓ |
-| `src/trajaudit/cli.py:227-235` (verdict path) | `score = None if verdict.abstain else _verdict_to_score(...)`, `abstain=verdict.abstain` | ✓ |
+| `src/monitorstress/cli.py:212-220` (monitor exception path) | `monitor_score=None, abstain=True` | ✓ |
+| `src/monitorstress/cli.py:227-235` (verdict path) | `score = None if verdict.abstain else _verdict_to_score(...)`, `abstain=verdict.abstain` | ✓ |
 | `tests/test_report.py:59` (`_make_records` helper) | always numeric `score`, `abstain=False` | ✓ |
 | `tests/test_report.py:190` (abstain test) | `monitor_score=None, abstain=True` | ✓ |
 | `tests/test_report.py:207` (all-abstain test) | `monitor_score=None, abstain=True` | ✓ |
@@ -223,7 +223,7 @@ recommendation is strict, but I'll defer.
 
 ### L1 — Synthetic transcript format diverges from METR's *(low, but reproduction-affecting)*
 
-`src/trajaudit/monitors/metr_prompt.py:99-114`. `_format_transcript` emits
+`src/monitorstress/monitors/metr_prompt.py:99-114`. `_format_transcript` emits
 
 ```
 [Task description]
@@ -247,7 +247,7 @@ reproduction-caveat section.
 
 ### L2 — `malt_row_to_trajectory` falsy-value fall-through *(low)*
 
-`src/trajaudit/adapters/malt.py:339-341`. The `_md(...) or _md(...) or ...
+`src/monitorstress/adapters/malt.py:339-341`. The `_md(...) or _md(...) or ...
 or "unknown"` chain for `transcript_id` falls through on any falsy value
 (`0`, `""`, `False`). If MALT ever ships `run_id=0` or a task_id that's
 the empty string, the synthesized call-id namespace silently collapses
@@ -257,7 +257,7 @@ fixture or by the real MALT rows I inspected (run_ids were ≥ 112337).
 
 ### L3 — `_events_from_messages` mis-classifies sequential user messages *(low)*
 
-`src/trajaudit/adapters/malt.py:199-205`. The framing-skip logic only
+`src/monitorstress/adapters/malt.py:199-205`. The framing-skip logic only
 fires once. A second consecutive `role="user"` message before any
 assistant turn is emitted as `ObservationEvent(source="stdout")`. Real
 agent traces rarely produce this pattern, but it's incorrect: a second
@@ -266,7 +266,7 @@ observation. Won't crash; just produces semantically muddy events.
 
 ### L4 — `paired_calls` silently drops orphan observations *(low)*
 
-`src/trajaudit/core/trajectory.py` (pre-existing). When an
+`src/monitorstress/core/trajectory.py` (pre-existing). When an
 `ObservationEvent` has no matching `ToolCallEvent` by `call_id`,
 `paired_calls()` yields nothing for it. Documented in the function's
 docstring as "first observation matching a given call_id wins," but the
@@ -275,7 +275,7 @@ Pre-existing; not introduced by this PR.
 
 ### L5 — `variants["clean"]` is the literal input trajectory *(low)*
 
-`src/trajaudit/transformations/structural.py:158`. `apply_structural_battery`
+`src/monitorstress/transformations/structural.py:158`. `apply_structural_battery`
 returns the original Trajectory object as the `"clean"` variant. A
 caller that mutates `variants["clean"]` mutates their input. This is
 tested by `test_apply_structural_battery_returns_four_variants` (which
@@ -323,7 +323,7 @@ Read every file in `docs/` and the README. Status per file:
 | `docs/repo_audit.md` | **stale-by-date** | Self-labelled "Produced: 2026-05-25, Git HEAD: 39795a5" — pre-pivot snapshot. Not actively misleading because it's clearly dated. |
 | `docs/architecture.md` | **STALE — actively misleading** | Describes the pre-pivot three-layer multi-detector framework as if it's the current design. Heavy use of "Layer 1/2/3", `AuditVerdict`, `integrity_label`. None of these are in v0.1. |
 | `docs/exploit-taxonomy.md` | **STALE** | Describes the Layer 2 syntactic scanner's exploit catalog. Layer 2 is not in v0.1. |
-| `docs/related-work.md` | **STALE — frames TrajAudit as the pre-pivot thing** | Positions the project against EvilGenie/RHA/TRACE as a "composed multi-layer framework with structured AuditVerdict." Not what v0.1 ships. |
+| `docs/related-work.md` | **STALE — frames monitorstress as the pre-pivot thing** | Positions the project against EvilGenie/RHA/TRACE as a "composed multi-layer framework with structured AuditVerdict." Not what v0.1 ships. |
 | `examples/README.md` | **STALE** | References `swe_bench_audit.py`, `terminal_bench_audit.py`, `compare_submissions.py` — none of which exist. |
 
 **Contradictions across docs:**
@@ -335,7 +335,7 @@ Read every file in `docs/` and the README. Status per file:
   be confused.
 - `examples/README.md` promises a `swe_bench_audit.py` example; `spec.md`
   explicitly lists SWE-bench as out of scope for v0.1.
-- `related-work.md` claims TrajAudit's "contribution is to compose
+- `related-work.md` claims monitorstress's "contribution is to compose
   workspace integrity with deterministic AST analysis and an LLM judge";
   v0.1 has none of those.
 
@@ -392,11 +392,11 @@ Ranked.
    examples/README.md) so an outside reader isn't actively misled.
    Either delete them or replace each with a one-paragraph "this
    describes the pre-pivot framework; see spec.md and pivot_decision.md
-   for what TrajAudit actually is." ~30-45 min total. **Without this,
+   for what monitorstress actually is." ~30-45 min total. **Without this,
    the outside-view risk in §7 is real.**
 
 2. **Resolve Q5 (live integration) post-merge, locally** — *low effort
-   if HF + API key are in hand, ~20 min.* Run `trajaudit run --limit 20
+   if HF + API key are in hand, ~20 min.* Run `monitorstress run --limit 20
    --budget-usd 3.00` from a normal shell outside Claude Code with a
    real `ANTHROPIC_API_KEY`. Capture the report card and commit
    `docs/v01_first_run.md` updates with real numbers. Unblocks the

@@ -1,6 +1,6 @@
 # Session Protocols
 
-*For any AI agent (Claude Code session, Claude.ai chat) working on TrajAudit. Tianyi maintains; agents follow.*
+*For any AI agent (Claude Code session, Claude.ai chat) working on monitorstress. Tianyi maintains; agents follow.*
 
 ## Start of session
 

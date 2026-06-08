@@ -1,4 +1,4 @@
-# TrajAudit — Repo Audit
+# monitorstress — Repo Audit
 
 Produced: 2026-05-25. Git HEAD: `39795a5`. No code was written, refactored, or tested as part
 of this audit; everything below is a read-only snapshot.
@@ -8,7 +8,7 @@ of this audit; everything below is a read-only snapshot.
 ## 1. Directory tree (3 levels)
 
 ```
-trajaudit/
+monitorstress/
 ├── .env.example
 ├── .github/
 │   └── workflows/
@@ -26,7 +26,7 @@ trajaudit/
 │   └── README.md                   # placeholder only
 ├── pyproject.toml
 ├── src/
-│   └── trajaudit/
+│   └── monitorstress/
 │       ├── __init__.py             # __version__ = "0.0.1"
 │       ├── benchmarks/
 │       │   ├── base.py             # BenchmarkAdapter ABC + @register
@@ -77,7 +77,7 @@ API."_ Verification by file/line:
 
 | Claim | Evidence | Status |
 |---|---|---|
-| Package skeleton | `src/trajaudit/__init__.py` exposes `__version__` | ✅ |
+| Package skeleton | `src/monitorstress/__init__.py` exposes `__version__` | ✅ |
 | CI | `.github/workflows/ci.yml` — lint + mypy + pytest | ✅ |
 | Docs | `docs/architecture.md`, `exploit-taxonomy.md`, `related-work.md` | ✅ |
 | Stub modules — Layer 1 | `sandbox.py`, `fs_differ.py`, `process_tracer.py` — all raise `NotImplementedError` | ✅ |
@@ -214,7 +214,7 @@ directly (e.g., in tests) must provide it explicitly. That's intentional, not a 
 
 ```
 39795a5  docs: switch security reporting to GitHub PVR
-c21b0d3  chore: scaffold TrajAudit project structure
+c21b0d3  chore: scaffold monitorstress project structure
 ```
 
 **Branches:** `main` only. No `dev`, `phase1`, or experimental branches.
@@ -259,7 +259,7 @@ tests/test_smoke.py::test_version_exposed
 1 test collected in 0.00s
 ```
 
-One test. It asserts `isinstance(trajaudit.__version__, str)` and that it's non-empty.
+One test. It asserts `isinstance(monitorstress.__version__, str)` and that it's non-empty.
 
 The four subdirectory inits (`tests/core/`, `tests/layer1/`, `tests/layer2/`, `tests/layer3/`)
 contribute zero tests. They exist to define the layout for future phases.

@@ -17,7 +17,7 @@ work, no SWE-bench-adapter changes, no MALT ingestion.
 | `docs(runner): mark AuditRunner as Phase 0 scaffold` | `core/runner.py` | +20 / −2 |
 
 Test count: 1 → 18 (1 smoke + 6 event-stream + 11 verdict). All green.
-`ruff check .` and `mypy src/trajaudit` both clean on every commit.
+`ruff check .` and `mypy src/monitorstress` both clean on every commit.
 
 ## Public API delta
 

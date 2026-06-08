@@ -15,7 +15,7 @@ nowhere in the post.
 
 ## 1. Griffin, Ollie, Oliverfm, Inglis, Cooney — "Misalignment classifiers: Why they're hard to evaluate adversarially, and why we're studying them anyway" (UK AISI Control Team, LessWrong, 15 Aug 2025)
 
-**The core conceptual distinction (load-bearing for TrajAudit positioning).**
+**The core conceptual distinction (load-bearing for monitorstress positioning).**
 Griffin et al. open by separating *misalignment classifiers* from *control
 monitors*. Control monitors evaluate transcripts to inform safety interventions
 with measurable consequences (blocking a tool call, escalating to a human);
@@ -28,9 +28,9 @@ classifiers cannot, because a red team optimising to fool a misalignment
 classifier naturally drifts into cases where intent itself is indeterminate
 (their SQL-injection example: strip the explicit reasoning from the
 chain-of-thought and you cannot distinguish intentional sabotage from honest
-mistake). **This distinction matters for TrajAudit because the framing
+mistake). **This distinction matters for monitorstress because the framing
 "post-hoc agent integrity monitor" sits ambiguously between the two.** If
-TrajAudit is a control monitor, adversarial evaluation is the right standard
+monitorstress is a control monitor, adversarial evaluation is the right standard
 of proof and the project should orient around it. If it is a misalignment
 classifier, the evaluation question becomes calibration-on-real-distribution,
 which is the methodology Griffin et al. then sketch.
@@ -59,7 +59,7 @@ finding: recall is dominated by what kind of model organism you test, and
 results on METR-style natural reward hacking are weak. If a follow-up wants
 to claim improvement, the 7% number is the baseline to beat for natural
 reward hacking; the 85% upper end is on instrumental-reasoning organisms
-where TrajAudit's mechanism may not be the bottleneck.
+where monitorstress's mechanism may not be the bottleneck.
 
 **§6 open challenges they list explicitly.** Three numbered limitations:
 (1) "We did not significantly optimise our classifier"; (2) "We did not
@@ -77,9 +77,9 @@ the classifier anyway with two pragmatic justifications: gathering
 real-world evidence about misalignment patterns, and building infrastructure
 transferable to (genuinely red-teamable) control monitors. **That second
 justification is closer to (D) than to (A-prime).** It is consistent with
-"TrajAudit is the measurement substrate" framing — but Griffin et al. arrive
+"monitorstress is the measurement substrate" framing — but Griffin et al. arrive
 at the same conclusion from inside the AISI control-team perspective. If
-TrajAudit follows them onto (A-prime), the differentiation has to be
+monitorstress follows them onto (A-prime), the differentiation has to be
 mechanical (different prompts, larger sample, multiple operating points)
 rather than conceptual.
 
@@ -92,9 +92,9 @@ The probe trains a linear regression on the **judge model's residual-stream
 activations from the last token**, typically at middle layers (the paper
 mentions layers 16–32 depending on model size). It does not require
 re-training the judge; it does require access to the judge's hidden states.
-**This is the central constraint for TrajAudit.** If TrajAudit's Layer 3
+**This is the central constraint for monitorstress.** If monitorstress's Layer 3
 judges are closed-API frontier models (Claude, GPT-5), the Radharapu probe
-is unusable as-published. If TrajAudit accepts a local-model-only
+is unusable as-published. If monitorstress accepts a local-model-only
 constraint (e.g., Qwen 2.5 7B via vLLM, the architecture the README already
 gestures at), then the probe is directly applicable. This is a real
 design-fork; the project cannot have both "closed-API judge" and
@@ -115,7 +115,7 @@ JudgeBench (620 samples) and RewardBench (3K samples). **Critical for
 generalisation question: these are all preference-judgment / reward-model
 benchmarks, not agent-integrity labels.** Whether a probe trained on
 preference judgments transfers to "this agent reward-hacked" is an open
-empirical question the paper does not address. If TrajAudit wants to use
+empirical question the paper does not address. If monitorstress wants to use
 this method, that transfer claim has to be re-evaluated.
 
 **Baselines and magnitudes.** Probe beats verbalised confidence by 64–87%
@@ -124,11 +124,11 @@ PPE Correctness). Beats multi-generation / consistency-vote methods by
 70–92% (LLaMA 70B: 0.017 vs. 0.159–0.215 Kuiper) and is ~10× cheaper. The
 deltas are large enough that the method is clearly a real advance over
 naive uncertainty estimators in the judge-of-judge regime; the question is
-whether the regime matches TrajAudit's.
+whether the regime matches monitorstress's.
 
 **Code release.** No GitHub link or probe-weight release was visible in the
 fetched HTML. If this remains true after a direct repository check, it is
-another friction point — TrajAudit would re-implement from the paper.
+another friction point — monitorstress would re-implement from the paper.
 
 ---
 
@@ -305,7 +305,7 @@ picture:
   direct-question-answering the results are *mixed*. Debate wins on
   extractive QA with information asymmetry; it does not consistently beat
   the simpler baseline on reasoning, math, or coding. **This is the most
-  important update for TrajAudit's framing:** the framing "TrajAudit is
+  important update for monitorstress's framing:** the framing "monitorstress is
   the measurement substrate that scalable oversight presupposes" assumes
   debate (or a debate-like protocol) is the operative oversight mechanism.
   If debate does not robustly beat direct QA in practice, the rhetorical
@@ -313,18 +313,18 @@ picture:
 
 **Honest read for the project framing.** The debate literature is real,
 serious, and active. It does not, however, *require* measurement
-infrastructure of the specific kind TrajAudit proposes (a post-hoc audit
+infrastructure of the specific kind monitorstress proposes (a post-hoc audit
 framework for finished benchmark trajectories); debate research uses
 debate-game datasets and direct human/LLM judging studies. The framing
-"TrajAudit is the substrate scalable oversight presupposes" is defensible
+"monitorstress is the substrate scalable oversight presupposes" is defensible
 as motivation but is **rhetorical rather than load-bearing**. A reviewer
 who reads the Kenton paper will not accept the framing as decisive without
-TrajAudit demonstrating it actually feeds into a downstream oversight
+monitorstress demonstrating it actually feeds into a downstream oversight
 protocol, which Phase 0 does not do.
 
 ---
 
-## Implications for the TrajAudit pivot decision
+## Implications for the monitorstress pivot decision
 
 Four findings reshape the (A-prime) vs. (D) question:
 
@@ -339,15 +339,15 @@ or a different specific judge. "We did calibration on MALT" alone is not
 a differentiator; UK AISI already did that.
 
 **(2) Radharapu et al.'s probe is white-box only, and not on agent-integrity
-labels.** If TrajAudit's Layer 3 keeps closed-API frontier models in the
+labels.** If monitorstress's Layer 3 keeps closed-API frontier models in the
 judge slot, the Radharapu method is not directly usable; it operates on
-the judge's residual-stream activations. If TrajAudit accepts a
+the judge's residual-stream activations. If monitorstress accepts a
 local-judge-only constraint, the method applies — but the demonstrated
 transfer is on preference-judgment datasets (PPE, JudgeBench, RewardBench),
 not on misalignment-classification labels like MALT's. The transfer claim
 itself would be a real contribution, but it's a contribution about probes,
 not about agent monitoring. **The probe is a useful tool, not a framework
-TrajAudit competes with.**
+monitorstress competes with.**
 
 **(3) MALT's monitor numbers are already near ceiling at point AUROC for
 reward-hacking detection.** GPT-5 gets 0.96 AUROC on unobfuscated MALT.
@@ -356,12 +356,12 @@ MALT are: calibration (Griffin's territory), obfuscation robustness (METR
 themselves report monitors hold up across their four variants — possibly
 worth re-testing more adversarially), worse-monitor analysis (Claude-based
 monitors reportedly perform poorly — why?), and coverage extension to
-behaviours not in MALT. **None of these is uniquely owned by TrajAudit's
+behaviours not in MALT. **None of these is uniquely owned by monitorstress's
 current scaffold.** They are research questions that need a clear angle.
 
 **(4) The debate framing is rhetorical, not load-bearing.** Kenton et al.
 weaken the "debate is the operative oversight protocol" framing enough
-that "TrajAudit is the substrate for scalable oversight" should not be
+that "monitorstress is the substrate for scalable oversight" should not be
 load-bearing for the project pitch. It can be motivation; it cannot be
 the contribution.
 

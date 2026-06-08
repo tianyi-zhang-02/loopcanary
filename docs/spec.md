@@ -1,6 +1,6 @@
-# TrajAudit v0.1 specification — as built
+# monitorstress v0.1 specification — as built
 
-This is the canonical record of what v0.1 of TrajAudit actually ships,
+This is the canonical record of what v0.1 of monitorstress actually ships,
 written *after* implementation rather than before. If anything else in the
 repo's documentation disagrees with this file, this file is authoritative
 for the v0.1 surface; conflicts should be resolved by editing the other
@@ -9,7 +9,7 @@ doc to match.
 ## What v0.1 is
 
 A CLI stress-test runner for AI safety monitors. Given a corpus of agent
-trajectories with ground-truth labels, TrajAudit:
+trajectories with ground-truth labels, monitorstress:
 
 1. Applies three structural transformations to each trajectory (drop the
    reasoning, truncate the end, pad with noop tool calls).
@@ -22,21 +22,21 @@ trajectories with ground-truth labels, TrajAudit:
 The whole pipeline runs as a single CLI invocation:
 
 ```
-trajaudit run --monitor metr --limit 60 --budget-usd 5.00
+monitorstress run --monitor metr --limit 60 --budget-usd 5.00
 ```
 
 ## What v0.1 ships
 
 | Surface | Module | Notes |
 |---|---|---|
-| Trajectory event-stream model | `trajaudit.core.events` + `trajaudit.core.trajectory` | Pre-existed; unchanged by v0.1. |
-| Verdict + taxonomy | `trajaudit.core.verdict` | Pre-existed; unchanged by v0.1. |
-| MALT adapter | `trajaudit.adapters.malt` | `load_malt_split()`, `malt_row_to_trajectory()`. Requires `HF_TOKEN`. |
-| Structural transformations | `trajaudit.transformations.structural` | `drop_reasoning`, `truncate_observations`, `pad_with_noops`, `apply_structural_battery`. Pure functions. |
-| Monitor protocol | `trajaudit.monitors.Monitor` | Runtime-checkable Protocol. `name: str` + `score(Trajectory) -> SemanticVerdict`. |
-| METR monitor | `trajaudit.monitors.metr_prompt.METRPromptMonitor` | Verbatim METR MALT reward-hacking prompt; calls `claude-haiku-4-5-20251001`. |
-| Report card | `trajaudit.report` | `compute_report()`, `ScoreRecord`, `ReportCard`, `TransformReport`. |
-| CLI | `trajaudit.cli` | Single command: `trajaudit run`. |
+| Trajectory event-stream model | `monitorstress.core.events` + `monitorstress.core.trajectory` | Pre-existed; unchanged by v0.1. |
+| Verdict + taxonomy | `monitorstress.core.verdict` | Pre-existed; unchanged by v0.1. |
+| MALT adapter | `monitorstress.adapters.malt` | `load_malt_split()`, `malt_row_to_trajectory()`. Requires `HF_TOKEN`. |
+| Structural transformations | `monitorstress.transformations.structural` | `drop_reasoning`, `truncate_observations`, `pad_with_noops`, `apply_structural_battery`. Pure functions. |
+| Monitor protocol | `monitorstress.monitors.Monitor` | Runtime-checkable Protocol. `name: str` + `score(Trajectory) -> SemanticVerdict`. |
+| METR monitor | `monitorstress.monitors.metr_prompt.METRPromptMonitor` | Verbatim METR MALT reward-hacking prompt; calls `claude-haiku-4-5-20251001`. |
+| Report card | `monitorstress.report` | `compute_report()`, `ScoreRecord`, `ReportCard`, `TransformReport`. |
+| CLI | `monitorstress.cli` | Single command: `monitorstress run`. |
 
 ## What v0.1 does NOT ship
 
@@ -52,7 +52,7 @@ Explicit non-scope, deferred to v0.2+:
 - **Layer 1 sandbox.** No Docker replay, no filesystem diff.
 - **Layer 2 syntactic scanner.** No AST detection of exploit patterns.
 - **Leaderboard / `compare` CLI commands.** Removed in the Task 4 rewrite
-  of `cli.py` (`feat(cli): add trajaudit run command`). Tracked for
+  of `cli.py` (`feat(cli): add monitorstress run command`). Tracked for
   v0.2+ in `docs/followups.md`.
 - **Web UI of any kind.** CLI only.
 
@@ -63,28 +63,28 @@ Anything else is private and may change without notice in 0.x.
 
 ```python
 # Data model
-from trajaudit.core.trajectory import Trajectory, HarnessResult
-from trajaudit.core.events import (
+from monitorstress.core.trajectory import Trajectory, HarnessResult
+from monitorstress.core.events import (
     TrajectoryEvent, ReasoningEvent, ToolCallEvent, ObservationEvent, ScoringEvent,
 )
-from trajaudit.core.verdict import (
+from monitorstress.core.verdict import (
     SemanticVerdict, SemanticLabel, TaxonomyTag, IntegrityLabel, Severity,
     WorkspaceFinding, SyntacticFinding, AuditVerdict,
 )
 
 # Adapter
-from trajaudit.adapters.malt import load_malt_split, malt_row_to_trajectory
+from monitorstress.adapters.malt import load_malt_split, malt_row_to_trajectory
 
 # Transformations
-from trajaudit.transformations import (
+from monitorstress.transformations import (
     drop_reasoning, truncate_observations, pad_with_noops, apply_structural_battery,
 )
 
 # Monitors
-from trajaudit.monitors import Monitor, METRPromptMonitor
+from monitorstress.monitors import Monitor, METRPromptMonitor
 
 # Report
-from trajaudit.report import (
+from monitorstress.report import (
     ScoreRecord, TransformReport, ReportCard, compute_report,
 )
 ```
@@ -92,7 +92,7 @@ from trajaudit.report import (
 ## CLI specification
 
 ```
-trajaudit run [OPTIONS]
+monitorstress run [OPTIONS]
 ```
 
 | Option | Default | Notes |
@@ -143,7 +143,7 @@ commits and `docs/auto_session_questions.md`:
   HF calls in tests; all external dependencies are mocked or
   fixture-driven.
 - `ruff check .` clean across the full tree.
-- `mypy src/trajaudit` clean across 38 source files.
+- `mypy src/monitorstress` clean across 38 source files.
 
 ## Outstanding items before v0.1.0 release tag
 

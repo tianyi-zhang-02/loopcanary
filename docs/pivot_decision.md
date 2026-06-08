@@ -1,4 +1,4 @@
-# TrajAudit pivot decision — recommendation
+# monitorstress pivot decision — recommendation
 
 Companion to `docs/reading_notes.md` and `docs/malt_recon.md`. Written
 2026-05-25, before the next plan revision.
@@ -26,15 +26,15 @@ The (A-prime)-pure-play case is undermined by three specific findings.
 calibration on a 2,997-example MALT+ControlArena+WildChat mix at 0.1%
 positive rate** (`docs/reading_notes.md` §1) — that is the (A-prime) story.
 They report 7% recall on METR reward hacking and acknowledge only "3
-positive-labels for our 0.1% OPR." A TrajAudit (A-prime) paper has to
+positive-labels for our 0.1% OPR." A monitorstress (A-prime) paper has to
 differentiate concretely against this; "we did calibration on MALT" is
 not enough. **Radharapu et al.'s linear-probe method requires
 residual-stream activations** (`docs/reading_notes.md` §2), so it cannot
 calibrate a closed-API Claude/GPT judge as-published; the obvious tool
-for tighter calibration is partially blocked unless TrajAudit accepts a
+for tighter calibration is partially blocked unless monitorstress accepts a
 local-judge-only constraint. **METR's own monitors are at 0.96
 reward-hacking AUROC for GPT-5** (`docs/reading_notes.md` §3); point
-AUROC is at ceiling, so any TrajAudit contribution that *only* moves
+AUROC is at ceiling, so any monitorstress contribution that *only* moves
 that number is publishable but small. The room is in calibration *plus*
 obfuscation robustness *plus* coverage *plus* multi-monitor comparison —
 which is exactly the (D) framing. The debate-literature framing
@@ -54,7 +54,7 @@ variants) is a real budget item in the low hundreds of dollars, and the
 project plan should size that explicitly. (3) **MALT's per-category sample
 sizes are tight enough** (`docs/malt_recon.md`) that calibration claims
 restricted to MALT alone will have wide CIs at the long-tail labels; (D)
-likely needs a second corpus (RHA, EvilGenie, or a TrajAudit-collected
+likely needs a second corpus (RHA, EvilGenie, or a monitorstress-collected
 supplement) for the calibration dimension to be more than a point estimate.
 
 ## Concrete next two weeks if accepted
@@ -74,8 +74,8 @@ supplement) for the calibration dimension to be more than a point estimate.
 - **Week 2:** Reach out to the EvilGenie and RHA authors (you've already
   cited both in `README.md`'s Related Work). Ask: would your labelled
   hacks be usable as evaluation fixtures for a monitor-comparison suite?
-- **Week 2:** Rewrite `trajaudit_plan.md` against the chosen direction.
-  The v1 TrajAudit ships as a small CLI that runs N monitors against M
+- **Week 2:** Rewrite `monitorstress_plan.md` against the chosen direction.
+  The v1 monitorstress ships as a small CLI that runs N monitors against M
   corpora and emits a calibration+robustness+coverage report card. Phase
   1 of the existing roadmap collapses into "implement the suite for one
   monitor × MALT × one obfuscation variant"; the rest is straightforward

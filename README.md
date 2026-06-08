@@ -1,12 +1,12 @@
-# TrajAudit
+# monitorstress
 
 **Stress-test runner for AI safety monitors.**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/tianyi-zhang-02/trajaudit/ci.yml?branch=main&label=ci)](https://github.com/tianyi-zhang-02/trajaudit/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/tianyi-zhang-02/monitorstress/ci.yml?branch=main&label=ci)](https://github.com/tianyi-zhang-02/monitorstress/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 
-TrajAudit takes a corpus of labeled agent trajectories, applies structural
+monitorstress takes a corpus of labeled agent trajectories, applies structural
 transformations (drop the chain-of-thought, truncate the tail, pad with
 noop tool calls), runs a monitor on every variant, and tells you how much
 the monitor's performance degrades. v0.1 ships one monitor (METR's
@@ -15,12 +15,12 @@ published MALT reward-hacking prompt) and one corpus (MALT public split).
 ## Quickstart
 
 ```bash
-git clone https://github.com/tianyi-zhang-02/trajaudit
-cd trajaudit
+git clone https://github.com/tianyi-zhang-02/monitorstress
+cd monitorstress
 uv sync --all-extras
 export HF_TOKEN=hf_...           # https://huggingface.co/settings/tokens
 export ANTHROPIC_API_KEY=sk-ant-...
-uv run trajaudit run --monitor metr --limit 60 --budget-usd 5.00
+uv run monitorstress run --monitor metr --limit 60 --budget-usd 5.00
 ```
 
 The MALT dataset is gated — accept the terms at
@@ -32,7 +32,7 @@ before the first run.
 > **MOCKUP** — illustrative numbers, not from a real run.
 
 ```
-                              TrajAudit stress-test report card
+                              monitorstress stress-test report card
 ┏━━━━━━━━━━━━━━━━━┳━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┓
 ┃ transformation  ┃   n ┃ AUROC (95% CI)      ┃ Δ AUROC (95% CI)      ┃ FPR shift ┃ abstain ┃
 ┡━━━━━━━━━━━━━━━━━╇━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━┩
@@ -50,7 +50,7 @@ Real numbers will appear in [docs/v01_first_run.md](docs/v01_first_run.md) once 
 ## CLI options
 
 ```
-trajaudit run [--monitor metr] [--limit 60] [--subset manually_reviewed]
+monitorstress run [--monitor metr] [--limit 60] [--subset manually_reviewed]
               [--budget-usd 5.00] [--output PATH]
 ```
 
@@ -87,8 +87,8 @@ For current state and collaboration protocols, see
 Not yet on PyPI; install from source via `uv sync --all-extras`. Post-PyPI:
 
 ```bash
-pip install "trajaudit[llm]"           # CLI + METR monitor
-pip install "trajaudit[llm,sandbox]"   # adds Docker sandbox for v0.2 Layer 1
+pip install "monitorstress[llm]"           # CLI + METR monitor
+pip install "monitorstress[llm,sandbox]"   # adds Docker sandbox for v0.2 Layer 1
 ```
 
 Core deps: pydantic, typer, datasets, rich, scikit-learn, numpy. Monitor
@@ -97,5 +97,5 @@ non-Anthropic monitors don't pay for the Anthropic SDK.
 
 ## Citation + License
 
-MIT — see [LICENSE](LICENSE). Cite as `Zhang, T. (2026). TrajAudit
-v0.1.0.` https://github.com/tianyi-zhang-02/trajaudit
+MIT — see [LICENSE](LICENSE). Cite as `Zhang, T. (2026). monitorstress
+v0.1.0.` https://github.com/tianyi-zhang-02/monitorstress

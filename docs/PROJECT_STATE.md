@@ -4,7 +4,7 @@
 
 ## Identity
 
-TrajAudit is a CLI stress-test runner for AI safety monitors. Given a corpus of labelled agent trajectories (currently MALT's public split), it applies a small battery of structural transformations to each trajectory, runs the chosen monitor on every variant, and reports per-transformation degradation in monitor performance (AUROC, Δ AUROC vs. clean, FPR shift at a calibrated threshold, worst-case Δ). v0.1 ships one monitor (METR's published MALT reward-hacking prompt) and three structural transformations (drop reasoning, truncate tail, pad with noop tool calls). No version is tagged yet; the v0.1 implementation lives in PR #1 awaiting one open decision before merge.
+monitorstress is a CLI stress-test runner for AI safety monitors. Given a corpus of labelled agent trajectories (currently MALT's public split), it applies a small battery of structural transformations to each trajectory, runs the chosen monitor on every variant, and reports per-transformation degradation in monitor performance (AUROC, Δ AUROC vs. clean, FPR shift at a calibrated threshold, worst-case Δ). v0.1 ships one monitor (METR's published MALT reward-hacking prompt) and three structural transformations (drop reasoning, truncate tail, pad with noop tool calls). No version is tagged yet; the v0.1 implementation lives in PR #1 awaiting one open decision before merge.
 
 ## Current phase
 
