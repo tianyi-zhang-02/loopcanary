@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from monitorstress.core.verdict import (
+from loopcanary.core.verdict import (
     SemanticLabel,
     SemanticVerdict,
     TaxonomyTag,

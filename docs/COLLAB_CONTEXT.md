@@ -1,10 +1,10 @@
 # Collaboration Context
 
-*This file is for AI agents (Claude Code, Claude.ai chat) collaborating on monitorstress across sessions. Read at the start of every new session, alongside `docs/PROJECT_STATE.md`.*
+*This file is for AI agents (Claude Code, Claude.ai chat) collaborating on loopcanary across sessions. Read at the start of every new session, alongside `docs/PROJECT_STATE.md`.*
 
 ## Project pitch (one sentence)
 
-`monitorstress` is an open-source Python library for **agent-loop
+`loopcanary` is an open-source Python library for **agent-loop
 observability** that diagnoses when an agent's behaviour is degrading,
 its context is compressing, or its cost is running away — via a
 `with ms.watch(...) as run:` context manager that runs pluggable
@@ -76,12 +76,12 @@ Inferred from the working history visible in this repo and the standing-rules tu
 - **In the loop, selectively.** Wants to be consulted on: pivots, framing decisions, governance changes, API spend, type-level changes with potentially wide blast radius (case (a) fixes), public artefacts. Does **not** want to be consulted on: routine implementation against a defined spec, tests/lint/types, factual doc corrections, feature-branch + PR mechanics.
 - **Tool-first, paper second.** The project plan ships a working tool before a paper. Paper scope (workshop vs. main conference) is deferred until v0.2 empirical results inform the choice.
 - **Honest negative results.** Q5 (Anthropic auth blocker in the sandbox) was documented as a real unmet deliverable rather than papered over. Phase 3 produced zero AUROC numbers; the docs say so. Documenting limitations is preferred over polished overclaiming.
-- **Standing safeguards already established.** Never push to `main`; never force-push; never rewrite pushed history; never touch governance files (`LICENSE`, `SECURITY.md`, `.github/`, `pyproject.toml` `[project]` metadata) without explicit authorisation; never handle secrets; never operate outside the monitorstress working tree; never exceed per-session API budget. Full list in `docs/SESSION_PROTOCOLS.md`.
+- **Standing safeguards already established.** Never push to `main`; never force-push; never rewrite pushed history; never touch governance files (`LICENSE`, `SECURITY.md`, `.github/`, `pyproject.toml` `[project]` metadata) without explicit authorisation; never handle secrets; never operate outside the loopcanary working tree; never exceed per-session API budget. Full list in `docs/SESSION_PROTOCOLS.md`.
 
 ## Active research direction
 
 **Agent-loop observability library** targeting the open-source Python
-community. The v1.0 contribution is a `pip install monitorstress`
+community. The v1.0 contribution is a `pip install loopcanary`
 library that ships with `with ms.watch(...) as run:` as its primary
 integration surface, six initial detectors (five zero-cost
 behavioural + one LLM-call safety detector wrapping the METR prompt),

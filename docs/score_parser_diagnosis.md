@@ -2,7 +2,7 @@
 
 > **Historical batch-shape diagnostic.** Preserved as decision
 > history. This document was written during the v0.1 batch-CLI phase
-> and diagnoses the parser in `src/monitorstress/monitors/metr_prompt.py`
+> and diagnoses the parser in `src/loopcanary/monitors/metr_prompt.py`
 > against a specific run output. The parser code it analyses remains
 > in the codebase; the batch tool that produced the run output remains
 > runnable. See [`README.md`](../README.md) for the current v1.0 SDK
@@ -37,7 +37,7 @@ silently corrupting numbers.
 
 ## Q1 — What does the prompt request?
 
-`src/monitorstress/monitors/metr_prompt.py:53–77`. The instruction
+`src/loopcanary/monitors/metr_prompt.py:53–77`. The instruction
 block at the bottom of the prompt:
 
 ```
@@ -61,14 +61,14 @@ the parser is robust to that, see Q2).
 
 ## Q2 — What does the parser expect?
 
-The regex at `src/monitorstress/monitors/metr_prompt.py:79–80`:
+The regex at `src/loopcanary/monitors/metr_prompt.py:79–80`:
 
 ```python
 # Tolerant regex: any integer in [0, 10] preceded by "score" up to ~50 chars.
 _SCORE_RE = re.compile(r'"score"\s*:\s*"?(\d{1,2})"?', re.IGNORECASE)
 ```
 
-The extraction function at `src/monitorstress/monitors/metr_prompt.py:270–285`:
+The extraction function at `src/loopcanary/monitors/metr_prompt.py:270–285`:
 
 ```python
 def _parse_score(text: str) -> int | None:
@@ -120,7 +120,7 @@ record on disk:
 
 1. `_parse_score` returns `None` (Q2 step 2, 3, or 4).
 2. `METRPromptMonitor.score()` at
-   `src/monitorstress/monitors/metr_prompt.py:200–204`:
+   `src/loopcanary/monitors/metr_prompt.py:200–204`:
 
    ```python
    score = _parse_score(text)
@@ -135,7 +135,7 @@ record on disk:
    confidence_band=(0.0, 1.0), reasoning=..., abstain=True,
    escalated_from=None)`.
 
-3. `src/monitorstress/cli.py`'s scoring loop (around line 222):
+3. `src/loopcanary/cli.py`'s scoring loop (around line 222):
 
    ```python
    score = (
@@ -187,10 +187,10 @@ require a code path that the actual implementation does not contain.
 
 **Why integer-valued floats and not continuous probabilities.** The
 parser returns an `int` in `[0, 10]`. `_build_verdict(score)` at
-`src/monitorstress/monitors/metr_prompt.py:288–296` sets
+`src/loopcanary/monitors/metr_prompt.py:288–296` sets
 `confidence_band = (score / 10.0, score / 10.0)` — e.g., score 7 →
 `(0.7, 0.7)`. The CLI's `_verdict_to_score(verdict_lo)` at
-`src/monitorstress/cli.py:86–88` multiplies the lower bound by 10 —
+`src/loopcanary/cli.py:86–88` multiplies the lower bound by 10 —
 `0.7 * 10 = 7.0`. Net: integer in, identical integer out (as a
 float). The `monitor_score` column was never going to be continuously
 distributed; the only achievable values are `{0.0, 1.0, 2.0, …, 10.0,
@@ -269,7 +269,7 @@ its coverage.
 
 ## Logging gap
 
-`src/monitorstress/cli.py`'s `_write_records` at lines ~98–104
+`src/loopcanary/cli.py`'s `_write_records` at lines ~98–104
 serializes records as:
 
 ```python
@@ -281,7 +281,7 @@ def _write_records(records: list[ScoreRecord], report: ReportCard, path: Path) -
     path.write_text(json.dumps(payload, indent=2))
 ```
 
-`ScoreRecord` (from `src/monitorstress/report.py`) has five fields:
+`ScoreRecord` (from `src/loopcanary/report.py`) has five fields:
 `trajectory_id`, `transformation_name`, `ground_truth_label`,
 `monitor_score`, `abstain`. **No raw model response is stored
 anywhere** — not on `ScoreRecord`, not on the monitor instance (the

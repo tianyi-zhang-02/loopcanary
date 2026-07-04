@@ -1,6 +1,6 @@
-# Contributing to monitorstress
+# Contributing to loopcanary
 
-Thanks for your interest. `monitorstress` is in the middle of a
+Thanks for your interest. `loopcanary` is in the middle of a
 substantial direction change — v0.1 batch prototype → v1.0
 observability library — so the shape of "how to contribute" depends on
 which piece you want to touch.
@@ -27,10 +27,7 @@ which piece you want to touch.
    the run-output JSON schema. The four surfaces named in the plan
    doc's semver commitment are what needs to be right *before* code
    lands.
-2. **Naming.** The plan doc reopens the rename question. Weigh in on
-   the shortlist (`driftlens`, `looplens`, `agentgaze`, `agentscope`,
-   `driftwatch`, or keep `monitorstress`) in an issue.
-3. **Missing detectors or event types.** If there's a degradation
+2. **Missing detectors or event types.** If there's a degradation
    pattern the initial detector set misses, or a memory/compression
    event type worth adding to the extended `TrajectoryEvent`
    variants, open an issue with a concrete example.
@@ -38,12 +35,12 @@ which piece you want to touch.
 ## Local development (v0.1 batch shape)
 
 ```bash
-git clone https://github.com/tianyi-zhang-02/monitorstress
-cd monitorstress
+git clone https://github.com/tianyi-zhang-02/loopcanary
+cd loopcanary
 uv sync --all-extras
 uv run pytest -q
 uv run ruff check .
-uv run mypy src/monitorstress
+uv run mypy src/loopcanary
 ```
 
 All three must pass. The CI matrix runs Python 3.11 and 3.12.
@@ -85,5 +82,5 @@ sit with it for a day before responding.
 ## Questions
 
 Open an issue with the `question` label, or start a
-[GitHub Discussion](https://github.com/tianyi-zhang-02/monitorstress/discussions)
+[GitHub Discussion](https://github.com/tianyi-zhang-02/loopcanary/discussions)
 if the topic is broader than a specific piece of code.

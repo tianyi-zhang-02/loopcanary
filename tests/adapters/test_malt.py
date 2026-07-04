@@ -12,14 +12,14 @@ from pathlib import Path
 
 import pytest
 
-from monitorstress.adapters.malt import load_malt_split, malt_row_to_trajectory
-from monitorstress.core.events import (
+from loopcanary.adapters.malt import load_malt_split, malt_row_to_trajectory
+from loopcanary.core.events import (
     ObservationEvent,
     ReasoningEvent,
     ScoringEvent,
     ToolCallEvent,
 )
-from monitorstress.core.trajectory import Trajectory
+from loopcanary.core.trajectory import Trajectory
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "malt"
 

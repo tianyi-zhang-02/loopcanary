@@ -1,7 +1,7 @@
-# Writing a monitorstress monitor
+# Writing a loopcanary monitor
 
 A monitor is any object that satisfies the `Monitor` protocol from
-`monitorstress.monitors`: it exposes a `name: str` attribute and a
+`loopcanary.monitors`: it exposes a `name: str` attribute and a
 `score(trajectory: Trajectory) -> SemanticVerdict` method. That's the entire
 extensibility surface. No base class to inherit from, no registration step,
 no plugin system — just structural typing.
@@ -10,8 +10,8 @@ no plugin system — just structural typing.
 
 ```python
 from typing import Protocol, runtime_checkable
-from monitorstress.core.trajectory import Trajectory
-from monitorstress.core.verdict import SemanticVerdict
+from loopcanary.core.trajectory import Trajectory
+from loopcanary.core.verdict import SemanticVerdict
 
 
 @runtime_checkable
@@ -31,8 +31,8 @@ check; the v0.1 CLI uses it.
 Wrap an arbitrary scoring function in a class:
 
 ```python
-from monitorstress.core.trajectory import Trajectory
-from monitorstress.core.verdict import SemanticLabel, SemanticVerdict
+from loopcanary.core.trajectory import Trajectory
+from loopcanary.core.verdict import SemanticLabel, SemanticVerdict
 
 
 class HeuristicMonitor:
@@ -54,7 +54,7 @@ class HeuristicMonitor:
         )
 ```
 
-That's 18 lines including the import, and it's a fully valid monitorstress
+That's 18 lines including the import, and it's a fully valid loopcanary
 monitor. You can pass an instance to the CLI's `--monitor` slot (once v0.2
 opens up that slot to non-builtin monitors) or drive it directly from
 Python.
@@ -66,7 +66,7 @@ Python.
   insufficient signal), set `abstain=True` and use the band `(0.0, 1.0)` —
   the verdict's validator enforces the consistency.
 * `taxonomy_tags` is optional; when present, use the `TaxonomyTag` enum
-  values from `monitorstress.core.verdict`. New tags should be added to the
+  values from `loopcanary.core.verdict`. New tags should be added to the
   enum, not passed as raw strings.
 
 ## Cost tracking (optional but recommended)

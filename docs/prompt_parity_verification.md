@@ -2,7 +2,7 @@
 
 > **Historical batch-shape verification.** Preserved as decision
 > history. Confirmed the METR-prompt reproduction in
-> `src/monitorstress/monitors/metr_prompt.py` matches METR's published
+> `src/loopcanary/monitors/metr_prompt.py` matches METR's published
 > version word-for-word before PR #6 merged; the resulting prompt
 > carries forward unchanged into the v1.0 `metr_safety` detector.
 

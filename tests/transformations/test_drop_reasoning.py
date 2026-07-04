@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from monitorstress.core.events import (
+from loopcanary.core.events import (
     ObservationEvent,
     ReasoningEvent,
     ScoringEvent,
     ToolCallEvent,
 )
-from monitorstress.core.trajectory import Trajectory
-from monitorstress.transformations import drop_reasoning
+from loopcanary.core.trajectory import Trajectory
+from loopcanary.transformations import drop_reasoning
 
 
 def test_happy_path_drops_only_reasoning(sample_trajectory: Trajectory) -> None:

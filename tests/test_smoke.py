@@ -7,9 +7,9 @@ under ``tests/core/``, ``tests/layer1/``, ``tests/layer2/``, and
 
 from __future__ import annotations
 
-import monitorstress
+import loopcanary
 
 
 def test_version_exposed() -> None:
-    assert isinstance(monitorstress.__version__, str)
-    assert monitorstress.__version__
+    assert isinstance(loopcanary.__version__, str)
+    assert loopcanary.__version__

@@ -1,13 +1,13 @@
-# monitorstress
+# loopcanary
 
 **Diagnose when your agent's loop is degrading, its context is compressing, and its cost is running away.**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/tianyi-zhang-02/monitorstress/ci.yml?branch=main&label=ci)](https://github.com/tianyi-zhang-02/monitorstress/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/tianyi-zhang-02/loopcanary/ci.yml?branch=main&label=ci)](https://github.com/tianyi-zhang-02/loopcanary/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![Status: v1.0 in development](https://img.shields.io/badge/status-v1.0%20in%20development-orange.svg)](docs/pivot_v1_agentic.md)
 
-`monitorstress` is an open-source Python library for **agent-loop
+`loopcanary` is an open-source Python library for **agent-loop
 observability**. It watches an agent's execution as it happens and
 diagnoses when its behaviour is going off-rails — the same tool call
 firing over and over, silent context compression, memory writes that
@@ -17,7 +17,7 @@ or stream live during execution.
 
 This is not another generic tracer. LangSmith, Weave, Arize Phoenix,
 and Braintrust already cover event capture and cost dashboards.
-`monitorstress` covers the two things they underserve today:
+`loopcanary` covers the two things they underserve today:
 **degradation diagnosis** (structured detectors that name the failure
 mode, not just record it) and **compression / memory event surfacing**
 (Claude's auto-compact and similar behaviours made visible and
@@ -32,7 +32,7 @@ plan — scope, roadmap, competition, differentiation, risks, and the
 four-commit implementation sequence.
 
 **A v0.1 batch prototype exists on `main`.** It's a CLI
-(`monitorstress run`) that stress-tests AI safety monitors against
+(`loopcanary run`) that stress-tests AI safety monitors against
 saved MALT trajectories. It works, has 111 tests, and stays runnable.
 But it's not the direction the project is going. Its
 `TrajectoryEvent` and `SemanticVerdict` data model is the foundation
@@ -69,7 +69,7 @@ treat this as working code. Source of truth:
 [`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md#v10-scope--tier-1-concrete-in-scope).
 
 ```python
-import monitorstress as ms
+import loopcanary as ms
 
 with ms.watch(
     agent_id="research-assistant",
@@ -96,8 +96,8 @@ instrumentation (`ms.instrument(client)`) and a function decorator
 - **v0.1** *(shipped)* — batch CLI, stress-tests a monitor over saved
   MALT trajectories. Historical shape; remains runnable but not the
   primary interface.
-- **v1.0** *(in development)* — Python SDK. `pip install monitorstress`;
-  `import monitorstress as ms`; `with ms.watch(...) as run:`.
+- **v1.0** *(in development)* — Python SDK. `pip install loopcanary`;
+  `import loopcanary as ms`; `with ms.watch(...) as run:`.
   Zero-config default, working output in under 10 minutes on a fresh
   machine. Ships with Claude Agent SDK integration + a generic
   wrap-any-callable API so LangChain users aren't locked out. Initial
@@ -116,12 +116,12 @@ open-source library.
 For the current batch shape — still functional, no v1.0 API yet:
 
 ```bash
-git clone https://github.com/tianyi-zhang-02/monitorstress
-cd monitorstress
+git clone https://github.com/tianyi-zhang-02/loopcanary
+cd loopcanary
 uv sync --all-extras
 export HF_TOKEN=hf_...           # https://huggingface.co/settings/tokens
 export ANTHROPIC_API_KEY=sk-ant-...
-uv run monitorstress run --model haiku --limit 60 --budget-usd 5.00
+uv run loopcanary run --model haiku --limit 60 --budget-usd 5.00
 ```
 
 The MALT dataset is gated — accept the terms at
@@ -135,19 +135,19 @@ verifiable fact.
 
 ## Related work
 
-The generic-tracing space is crowded and mature. `monitorstress` is
+The generic-tracing space is crowded and mature. `loopcanary` is
 not trying to be a general observability platform; the niche is
 narrower and deliberately so.
 
 - **LangSmith / Weave / Arize Phoenix / Braintrust** — mature
-  LLM-tracing platforms. `monitorstress` differs by focusing on
+  LLM-tracing platforms. `loopcanary` differs by focusing on
   named degradation detectors and compression / memory event
   surfacing rather than generic event capture.
 - **Inspect AI** (UK AISI) — Python eval framework with monitoring
-  hooks. `monitorstress` is complementary; a future release may ship
+  hooks. `loopcanary` is complementary; a future release may ship
   an Inspect AI adapter.
 - **METR MALT** — the reward-hacking-monitor benchmark that motivated
-  the original v0.1 batch tool. Still used inside `monitorstress` as
+  the original v0.1 batch tool. Still used inside `loopcanary` as
   the validation corpus for the safety-detector plug-in specifically.
 
 Full write-ups live in
@@ -188,5 +188,5 @@ under semver at the v1.0 tag.
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Cite as
-`Zhang, T. (2026). monitorstress.`
-https://github.com/tianyi-zhang-02/monitorstress
+`Zhang, T. (2026). loopcanary.`
+https://github.com/tianyi-zhang-02/loopcanary

@@ -2,7 +2,7 @@
 
 > **Historical batch-shape diagnostic.** Preserved as decision
 > history. This document diagnoses the METR-prompt reproduction in
-> `src/monitorstress/monitors/metr_prompt.py` under the v0.1 batch
+> `src/loopcanary/monitors/metr_prompt.py` under the v0.1 batch
 > shape; its findings drove PR #6's verbatim-parity work. The METR
 > prompt monitor itself carries forward into v1.0 as one plug-in
 > detector (`metr_safety` in the initial detector set — see
@@ -115,7 +115,7 @@ The HF dataset card at `huggingface.co/datasets/metr-evals/malt-public`
 contains no monitor-prompt text (confirmed via second WebFetch). The
 blog post is the only public source.
 
-### What we reproduce in `src/monitorstress/monitors/metr_prompt.py`
+### What we reproduce in `src/loopcanary/monitors/metr_prompt.py`
 
 `metr_prompt.py:53-77`, the module's `METR_REWARD_HACKING_PROMPT`:
 
@@ -186,7 +186,7 @@ operational models.
 
 ### Data path, traced
 
-1. **Adapter** at `src/monitorstress/adapters/malt.py:_events_from_messages`
+1. **Adapter** at `src/loopcanary/adapters/malt.py:_events_from_messages`
    reads MALT's on-disk format — chat-completion messages with
    `role` ∈ {system, developer, user, assistant, function, tool},
    plus `function_call: {"name", "arguments"}` for tool invocations
@@ -194,10 +194,10 @@ operational models.
    (`ReasoningEvent`, `ToolCallEvent`, `ObservationEvent`,
    `ScoringEvent`). Framing-role messages (system/developer/first
    user-text) are dropped.
-2. **CLI** at `src/monitorstress/cli.py:204` calls
+2. **CLI** at `src/loopcanary/cli.py:204` calls
    `apply_structural_battery(traj)` to get four variants (clean +
    three transformations), then loops `monitor.score(variant)`.
-3. **Monitor** at `src/monitorstress/monitors/metr_prompt.py:178-179`
+3. **Monitor** at `src/loopcanary/monitors/metr_prompt.py:178-179`
    builds the prompt:
    ```python
    prompt = METR_REWARD_HACKING_PROMPT.format(
