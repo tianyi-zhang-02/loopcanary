@@ -349,6 +349,111 @@ be for years.
 
 Each of these commits is a small PR against `main`, reviewed and merged individually. The pivot doesn't ship as one giant rewrite.
 
+## Open-source distribution considerations
+
+*Added 2026-06-08 after Tianyi clarified the intent: this pivot is an
+open-source community-serving tool, not an internal research artefact.*
+
+This clarification changes several defaults in the plan above.
+
+**API-surface bar rises.** *"Easy to plug into their workflow"*
+means the acceptance test is: **`pip install monitorstress` → one
+`import` → one context manager, working output within ten minutes on
+a fresh machine.** No hidden config, no environment setup beyond
+whatever the user already has for their agent runtime. The three
+integration modes in the v1.0 SDK section stay, but the *default*
+mode needs to be effortless. Every option beyond the default is a
+tax on adoption.
+
+**Documentation becomes the product.**
+
+- `README.md` needs to be readable at a scan, install → first-fire in
+  under 60 seconds of reader time. An animated GIF or screenshot of
+  the timeline output at the top is worth building. Existing README
+  (currently reflecting the batch stress-test framing) will need a
+  full rewrite as part of the pivot — mark SUPERSEDED alongside
+  `docs/spec.md`.
+- `examples/` directory needs runnable scripts, one per major
+  detector, one per integration mode. Currently empty (only a
+  SUPERSEDED marker from the pre-pivot session). This becomes v1.0
+  release-blocker work.
+- `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md` all missing;
+  standard OSS surface, cheap to add, expected by contributors.
+  `LICENSE` (MIT) and `SECURITY.md` are already in place from the
+  scaffold phase.
+
+**Naming: reopened.** My earlier recommendation ("defer rename to
+v1.1") was correct for an internal project but wrong for an
+OSS-distribution project. Discoverability outweighs rename cost when
+the audience is public. Shortlist:
+
+| Candidate | Pros | Cons |
+|---|---|---|
+| `driftlens` | Invokes *drift* (the target) + *lens* (visibility). Clear niche. Under-claimed. | Both words already appear in adjacent tools; not unique enough |
+| `looplens` | *Loop* (agent iteration) + *lens*. Directly names the "loop degradation" story. | Slightly generic |
+| `agentgaze` | Memorable. Poetic. | Ambiguous meaning; may read as monitoring-of-users rather than monitoring-by-agent |
+| `agentscope` | Reads as "scope for observing agents". Clear. | Overlap with "agent scope" in agent-framework discourse |
+| `driftwatch` | Watchdog framing. Concrete verb. | Similar to `agentwatch`, may hit LangSmith-adjacent naming |
+| Keep `monitorstress` | Zero cost. Double meaning (stress-testing monitors + stress-testing agents-with-monitors) is defensible. | Reads as a *benchmark*, not a *library*. SEO for "agent observability" is poor. |
+
+**My recommendation:** `driftlens` or `looplens`. Both convey the
+niche (degradation over time) without over-claiming a platform.
+Decision is Tianyi's — the last rename (trajaudit → monitorstress)
+had real cost (six commits, cross-file cleanup, external references
+updated). Doing it *now*, before v1.0 code lands and before external
+references accumulate, is meaningfully cheaper than doing it later.
+
+**Anchor framework: broaden earlier.** The original recommendation
+was "Claude Agent SDK first, LangChain in v1.1." For an OSS project
+targeting broad reach, LangChain users being locked out until v1.1
+is a real cost. Revised recommendation:
+
+- **Primary integration:** Claude Agent SDK (as before) — tightest
+  hooks, matches the Anthropic Fellows audience, gets the
+  compression-event visibility story most cleanly since auto-compact
+  is Claude-specific.
+- **Alongside primary:** A generic "wrap any callable that produces
+  a completion" API. Roughly 200 lines of code. LangChain users can
+  use this immediately; a proper LangChain integration (chain-native
+  instrumentation, agent-tool-callback wiring) can still wait for
+  v1.1.
+
+This resolves the tension between depth (Claude-SDK-specific
+integration for the compression detector) and reach (LangChain users
+shouldn't have to wait a version).
+
+**Semantic-versioning commitment.** Once v1.0 tags, the public API
+surface is locked. Breaking changes post-launch have real cost in an
+OSS project. This means the SDK surface currently sketched in the
+plan doc's v1.0 scope section needs a final API review *before* the
+first code commit — not after users start depending on it. Concretely:
+the `Detector` protocol shape, the event-type names, the `watch()`
+context manager's signature, and the report JSON schema are the four
+API-freeze surfaces.
+
+**Launch surface (not today's problem, but a v1.0 blocker):**
+
+- PyPI + GitHub with the anchor tagline "Diagnose when your agent's
+  loop is degrading, its context is compressing, and its cost is
+  running away." Not "observability platform."
+- HN Show or equivalent around v1.0 release. Timing coordinates with
+  the Anthropic Fellows application (per Tianyi's audience target).
+- Twitter/X thread from Tianyi at release. Not before.
+- Skip r/MachineLearning until there's real user substance — early
+  posts to a critical audience with a proof-of-concept produce
+  hostile reception more often than not.
+- No blog post from Anthropic team unless one falls out of the
+  Fellows-application process naturally.
+
+**Community-tool discipline that stays out of scope for v1.0:**
+
+- Hosted anything (T3 aspirational as before).
+- Cross-run analytics (T2).
+- Team collaboration / permissions (T3).
+- Custom detector marketplace (interesting; wait for signal).
+- Integrations beyond Claude Agent SDK + generic-callable + eventually
+  LangChain (respond to actual demand, not anticipated demand).
+
 ## Explicit non-goals for v1
 
 - No hosted dashboard.
