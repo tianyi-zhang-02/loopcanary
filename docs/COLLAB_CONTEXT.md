@@ -4,14 +4,68 @@
 
 ## Project pitch (one sentence)
 
-monitorstress is a CLI stress-test runner for AI safety monitors — given labelled agent trajectories, it applies structural transformations, runs the chosen monitor on every variant, and reports per-transformation performance degradation.
+`monitorstress` is an open-source Python library for **agent-loop
+observability** that diagnoses when an agent's behaviour is degrading,
+its context is compressing, or its cost is running away — via a
+`with ms.watch(...) as run:` context manager that runs pluggable
+detectors against the trajectory as it streams. (v1.0 target;
+implementation not yet started as of 2026-06-08. See "Framing history"
+below for what came before and the pivot to this shape.)
 
 ## Framing history (why the project is shaped the way it is)
 
-- **Original framing (Phase 0, pre-pivot):** A multi-layer benchmark-integrity audit framework with three independent layers (Layer 1 Docker workspace replay, Layer 2 AST syntactic exploit detection, Layer 3 LLM-as-judge with multi-tier escalation), emitting a structured `AuditVerdict` with per-layer provenance. The pre-pivot docs (`architecture.md`, `exploit-taxonomy.md`, `related-work.md`, `examples/README.md`) describe this framing; PR #1 marks them SUPERSEDED.
-- **Pivot trigger:** Primary-source reading (`docs/reading_notes.md`) showed that Griffin et al. (UK AISI Control Team, Aug 2025) already occupy the (A-prime) calibrated-classifier-on-MALT space; METR's monitor numbers are at 0.96 AUROC ceiling for reward-hacking on unobfuscated data; the debate-literature framing for "measurement substrate for scalable oversight" is rhetorical rather than load-bearing.
-- **Current framing (v0.1):** A reformulated (D) — standardised stress-test evaluation suite for post-hoc agent integrity monitors. Calibration is one dimension among several (point AUROC, Δ AUROC under transformation, FPR shift at calibrated threshold). The contribution is *comparison across monitors and transformation conditions on a stable substrate*, not building a better monitor or being first to publish calibration numbers. Recommendation came at **medium** confidence in `docs/pivot_decision.md`.
-- **v0.1 scope:** One monitor (METR's published prompt), one corpus (MALT public split, 1,826 manually-reviewed rows), three structural transformations. Semantic transformations and additional monitors are v0.2+.
+- **Original framing (Phase 0, pre-pivot #1):** A multi-layer
+  benchmark-integrity audit framework with three independent layers
+  (Layer 1 Docker workspace replay, Layer 2 AST syntactic exploit
+  detection, Layer 3 LLM-as-judge with multi-tier escalation),
+  emitting a structured `AuditVerdict` with per-layer provenance.
+  The pre-pivot docs (`architecture.md`, `exploit-taxonomy.md`,
+  `related-work.md`, `examples/README.md`) describe this framing;
+  PR #1 marks them SUPERSEDED.
+- **First pivot (v0.1 batch, 2026-05):** Reading of Griffin et al.
+  (UK AISI Control Team, Aug 2025), Radharapu et al., and METR's
+  MALT release (see `docs/reading_notes.md`) showed that the
+  (A-prime) calibrated-classifier-on-MALT space was already
+  occupied, METR's monitor numbers were at ceiling, and the
+  debate-literature framing was rhetorical rather than load-bearing.
+  Rec: reformulated (D) — a standardised stress-test suite for
+  post-hoc agent integrity monitors. v0.1 shipped this: one monitor
+  (METR's), one corpus (MALT public, 1,826 manually-reviewed rows),
+  three structural transformations, one report card. See
+  [`docs/pivot_decision.md`](pivot_decision.md).
+- **Empirical results from v0.1:** Haiku n=60 with the faithful
+  METR prompt (PR #6) collapsed to AUROC 0.517 (chance). Sonnet
+  n=60 with faithful prompt has not yet been executed — the
+  `--model` flag from PR #7 enables it. So we know the batch tool
+  can run; we don't yet know that it measures anything real. This
+  ambiguity is a load-bearing factor in the second pivot.
+- **Second pivot (v1.0 SDK, 2026-06-08):** Reframed from a batch
+  CLI over saved trajectories to an **open-source Python library
+  for streaming agent-loop observability**. Rationale in
+  [`docs/pivot_v1_agentic.md`](pivot_v1_agentic.md). Key argument:
+  in 2026, the ecosystem has moved from *"benchmark, run your model
+  on it"* to *"agent runtime, register your monitor as a callback"*;
+  a batch CLI over saved MALT reads as pre-2025 shape. Distinctive
+  OSS niche relative to LangSmith / Weave / Arize / Braintrust:
+  **degradation diagnosis + compression/memory event surfacing**.
+  Explicitly acknowledged in the plan that the pivot is
+  *directionally right* but the evidence base is more "the field
+  has moved" than "we tried the current shape and it demonstrably
+  doesn't measure what we care about."
+- **v1.0 scope (in development):** Python SDK, no dashboard, no
+  service. Ships with Claude Agent SDK integration + a generic
+  wrap-any-callable adapter (so LangChain users aren't locked out
+  until v1.1). Six initial detectors, timeline report renderer,
+  per-run JSON export. Full spec in
+  [`docs/pivot_v1_agentic.md`](pivot_v1_agentic.md).
+- **What survives from v0.1:** `TrajectoryEvent` discriminated
+  union, `SemanticVerdict` shape, METR prompt monitor
+  (repositioned as one plug-in detector), `--model` flag +
+  model-keyed pricing (PR #7), MALT adapter and AUROC report card
+  (retained as validation infrastructure for the safety-detector
+  plug-in specifically). What reshapes: CLI → SDK, batch →
+  streaming, AUROC-vs-transformations report → degradation-timeline
+  report. Structural transformations reshape as counterfactuals.
 
 ## Owner preferences
 
@@ -26,7 +80,27 @@ Inferred from the working history visible in this repo and the standing-rules tu
 
 ## Active research direction
 
-Stress-test runner for safety monitors on MALT as the v1 contribution. v0.1 ships the smallest end-to-end vertical slice: three structural transformations, one monitor (METR's prompt), one corpus (MALT), one report card with bootstrap CIs. v0.2 adds semantic transformations (CoT vague-ification, summarisation) and additional monitors (EvilGenie reproduction, cascaded multi-tier). Paper scope is deferred until v0.2 empirical results inform the workshop-vs-conference choice; the decision logic is "ship a thing, learn from it, then decide what the thing means."
+**Agent-loop observability library** targeting the open-source Python
+community. The v1.0 contribution is a `pip install monitorstress`
+library that ships with `with ms.watch(...) as run:` as its primary
+integration surface, six initial detectors (five zero-cost
+behavioural + one LLM-call safety detector wrapping the METR prompt),
+and a per-run timeline report. Anchor framework: Claude Agent SDK,
+with a generic wrap-any-callable API alongside for LangChain reach.
+
+The distinctive OSS niche relative to LangSmith / Weave / Arize
+Phoenix / Braintrust is **named degradation detectors** (structured
+signals for loop-of-death, null progress, cost run-away, context
+pressure, compression cadence) plus **compression / memory event
+surfacing** (Claude's auto-compact and similar behaviours made
+visible and correlated with downstream outcomes). "Generic tracing"
+is not the niche — a lot of well-funded teams already do that better
+than a solo project can.
+
+Full plan: [`docs/pivot_v1_agentic.md`](pivot_v1_agentic.md). Paper
+scope is deferred until v1.0 ships and has demonstrable users; the
+decision logic remains "ship a thing, learn from it, then decide
+what the thing means."
 
 ## Things to stop and ask about, not act on
 

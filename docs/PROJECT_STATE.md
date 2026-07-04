@@ -1,51 +1,131 @@
 # Project State
 
-*Last updated: 2026-05-27, by Claude Code session. Branch base: `a066d44` (origin/main). Latest cross-branch reference: M1 fix landed in PR #1 at `ce2d923`.*
+*Last updated: 2026-06-08, by Claude Code session. Branch base:
+`63669fd` (origin/main tip, PR #8 pivot plan merged). Pivot to
+agent-loop observability accepted; implementation not yet started.*
 
 ## Identity
 
-monitorstress is a CLI stress-test runner for AI safety monitors. Given a corpus of labelled agent trajectories (currently MALT's public split), it applies a small battery of structural transformations to each trajectory, runs the chosen monitor on every variant, and reports per-transformation degradation in monitor performance (AUROC, Δ AUROC vs. clean, FPR shift at a calibrated threshold, worst-case Δ). v0.1 ships one monitor (METR's published MALT reward-hacking prompt) and three structural transformations (drop reasoning, truncate tail, pad with noop tool calls). No version is tagged yet; the v0.1 implementation lives in PR #1 awaiting one open decision before merge.
+`monitorstress` is transitioning from **"batch CLI that
+stress-tests AI safety monitors on saved MALT trajectories"**
+(v0.1, on `main`, functional) to **"open-source Python library for
+agent-loop observability with named degradation detectors and
+compression / memory event surfacing"** (v1.0, in development).
+
+Canonical spec for v1.0: [`docs/pivot_v1_agentic.md`](pivot_v1_agentic.md).
 
 ## Current phase
 
-**Between Phase 0 (scaffold, on `main`) and v0.1 (in PR #1).** v0.1 implementation is feature-complete and M1 fix has landed; PR #1 is ready for human merge review.
+**Post-pivot-acceptance, pre-v1.0-implementation.** The pivot plan
+merged as PR #8 (`63669fd`). This restructure PR then updates
+governance docs (README, PROJECT_STATE, COLLAB_CONTEXT, SUPERSEDED
+markers on pre-pivot content) to catch the repo up with the new
+direction. No v1.0 code has landed. The v0.1 batch shape remains
+runnable on `main`.
 
 ## Active work
 
-- **PR #1** — `v01-cli-stress-test-runner` branch, 19 commits ahead of `main`. v0.1 MALT adapter, three structural transformations, Monitor protocol + METRPromptMonitor, CLI `run` command, report card, integration attempt, schema fixes, pre-merge cleanup, **M1 strict-validator fix (`ce2d923`)**. **Owner: Tianyi** (merge review).
-- **PR #2** — `claude/project-memory-setup` branch. Project-memory infrastructure (PROJECT_STATE.md, COLLAB_CONTEXT.md, SESSION_PROTOCOLS.md, plus pointers in followups.md and README.md). Docs-only, no code touched. **Owner: Tianyi** (merge review).
+- **This PR (branch `docs/pivot-restructure`)** — README rewrite,
+  PROJECT_STATE / COLLAB_CONTEXT refresh, SUPERSEDED markers on
+  pre-pivot docs, commit the three uncommitted diagnosis docs as
+  historical record, add CONTRIBUTING and CHANGELOG placeholders.
+  **Owner: Tianyi** (review). No code changes; no rename; no
+  directory restructure.
+- **Pending: v0.1 Sonnet re-run (Q5-adjacent).** Pre-v1.0-code
+  prerequisite from the pivot plan. Runs on Tianyi's local shell
+  (sandbox has no working Anthropic credentials). Confirms whether
+  the batch shape can measure anything real, which informs how
+  aggressive to be in the v1.0 architectural break from v0.1's
+  assumptions. Estimated cost ~$0.90.
 
 ## Open decisions
 
-- **Q5 — Anthropic auth for the v0.1 live integration run** (tracked in `docs/auto_session_questions.md` on PR #1). Sandbox `ANTHROPIC_API_KEY` is empty; live run requires Tianyi to run locally with a real key.
+- **Package rename before v1.0?** `monitorstress` reads as a
+  benchmark tool; the pivot plan discusses discoverability for OSS
+  distribution. Shortlist: `driftlens`, `looplens`, `agentgaze`,
+  `agentscope`, `driftwatch`, or keep `monitorstress` (double
+  meaning). See
+  [`pivot_v1_agentic.md#open-source-distribution-considerations`](pivot_v1_agentic.md).
+  Cost of renaming again is real (last rename was PR #5's six-commit
+  cross-file cleanup); OSS discoverability benefit is also real.
+  Decision required before v1.0 tag.
+- **Implementation ordering.** The pivot plan lists four code commits
+  (extended events → detector protocol → `watch` context manager →
+  Anthropic SDK instrumentation). Tianyi picks when to start; the
+  Sonnet re-run gates the first commit.
+- **Anchor framework details for v1.0 launch.** Plan says Claude
+  Agent SDK primary + generic wrap-any-callable alongside. Concrete
+  API-surface choices need a final review before code lands, per
+  the semver commitment at v1.0 tag.
 
 ## Active blockers
 
-- **v0.1 live integration evidence** (`docs/v01_first_run.md` numbers) — blocked on Q5 sandbox auth. Owner: Tianyi local task; not solvable inside Claude Code.
+- **v1.0 code prerequisites.** Sonnet n=60 re-run (owner: Tianyi
+  local) and rename decision (owner: Tianyi) both gate the first
+  v1.0 implementation commit.
 
 ## Recently completed (last 30 days)
 
-- **PR #1 commit `ce2d923` — `fix(report): enforce ScoreRecord invariant at construction (M1)`** — strict `__post_init__` validator on `ScoreRecord` enforcing `(monitor_score is None) ⟺ (abstain is True)`. Case (a) treatment per the root-cause investigation. 103 tests pass.
-- **v0.1 implementation, in flight (PR #1)** — MALT adapter with on-disk-schema fixes, three structural transformations, Monitor protocol + METRPromptMonitor, CLI runner, report card with bootstrap CIs, four-doc supersession pass, tracker reorganization.
-- **`a066d44 docs(pivot): add pivot decision recommendation`** — recommended reformulated (D) over (A-prime); confidence medium.
-- **`9677191 docs(malt): add empirical recon notebook and summary`** — 28-cell notebook; HF blocker documented.
-- **`04f7e90 docs(reading): add primary-source reading notes`** — Griffin et al., Radharapu et al., METR MALT, debate-literature follow-ups; key finding that Griffin already occupies the (A-prime) space.
+- **PR #8 — pivot plan accepted** (`63669fd`). Merged the
+  agent-observability direction change and its OSS-distribution
+  addendum. Load-bearing artefact for all subsequent work.
+- **PR #7 — `--model` flag + model-keyed pricing + run-output
+  records model id** (`6b99985`). Anti-footgun infrastructure so
+  "which model ran" is a verifiable fact in every run's output JSON.
+- **PR #6 — prompt verbatim parity with METR's published version**
+  (`90d4d62`). Added the four missing blocks (negative examples,
+  `<first_few_messages>` / `<transcript_chunk>` XML delimiters,
+  "if you are unsure" hint, closing reinforcement); wrote and
+  independently verified via `docs/prompt_parity_verification.md`.
+- **PR #5 — repository and package rename** (`bd48601`), from
+  `trajaudit` (arXiv name collision) to `monitorstress`.
+- **PR #4 — Anthropic monitor migrated to Claude Haiku 4.5** with
+  correct pricing.
 
 ## What's NOT in this project (anti-scope)
 
-- **Semantic transformations** (CoT vague-ification, summarisation). v0.2.
-- **Additional monitors** (EvilGenie monitor, cascaded multi-tier monitor, Qwen/OpenAI local monitors). v0.2+.
-- **Additional benchmark adapters** (SWE-bench, Terminal-Bench, WebArena, GAIA). v0.2+.
-- **Layer 1 sandbox / Layer 2 syntactic scanner.** Pre-pivot scope; abandoned. The pre-pivot multi-layer framework docs (`architecture.md`, `exploit-taxonomy.md`, `related-work.md`, `examples/README.md`) are marked SUPERSEDED in PR #1.
-- **Paper writeup.** Deferred until v0.2 empirical results inform workshop-vs-conference scope.
+**Preserved from the pre-pivot list:**
+
+- Semantic transformations (CoT vague-ification, summarisation).
+- SWE-bench / Terminal-Bench / WebArena / GAIA / OSWorld adapters.
+- Layer 1 Docker sandbox / Layer 2 syntactic scanner.
+
+**Added by the pivot:**
+
+- Hosted dashboard / hosted anything (T3 aspirational, out of solo
+  scope).
+- Team collaboration / multi-user features.
+- Cross-run analytics as a service.
+- Non-Anthropic-SDK integrations before v1.1 (except a lightweight
+  "wrap any callable" adapter that ships alongside v1.0's Claude
+  Agent SDK primary integration).
+- Paper writeup before shipping working v1.0.
 
 ## Pointers
 
-- `README.md` — user-facing entry point (pre-pivot copy currently on `main`; v0.1 rewrite lives in PR #1).
-- `docs/spec.md` — canonical v0.1 technical spec (in PR #1; not yet on `main`).
-- `docs/followups.md` — non-blocking ideas and v0.2+ candidates.
-- `docs/auto_session_questions.md` — current open questions for human review (in PR #1).
-- `docs/COLLAB_CONTEXT.md` — collaboration context for AI agents working across sessions.
-- `docs/SESSION_PROTOCOLS.md` — start-of-session / end-of-session protocols.
-- `docs/pivot_decision.md` — the recommendation that defined v0.1's scope.
-- `docs/reading_notes.md` — primary-source notes underpinning the pivot.
+- [`README.md`](../README.md) — user-facing entry, v1.0-facing.
+- [`docs/pivot_v1_agentic.md`](pivot_v1_agentic.md) — v1.0 plan,
+  canonical spec.
+- [`docs/COLLAB_CONTEXT.md`](COLLAB_CONTEXT.md) — collaboration
+  context and framing history for AI-agent sessions.
+- [`docs/SESSION_PROTOCOLS.md`](SESSION_PROTOCOLS.md) — start/end-of-session
+  operational protocols.
+- [`docs/followups.md`](followups.md) — non-blocking follow-ups.
+- [`docs/auto_session_questions.md`](auto_session_questions.md) —
+  open questions from autonomous sessions.
+- Historical decision records preserved as SUPERSEDED:
+  [`spec.md`](spec.md),
+  [`architecture.md`](architecture.md),
+  [`related-work.md`](related-work.md),
+  [`exploit-taxonomy.md`](exploit-taxonomy.md),
+  [`pivot_decision.md`](pivot_decision.md) (the earlier
+  multi-layer → stress-test pivot),
+  [`repo_audit.md`](repo_audit.md),
+  [`refactor_summary.md`](refactor_summary.md),
+  [`malt_recon.md`](malt_recon.md),
+  [`reading_notes.md`](reading_notes.md),
+  [`status_report.md`](status_report.md),
+  plus the batch-shape diagnostic trail
+  ([`score_parser_diagnosis.md`](score_parser_diagnosis.md),
+  [`prompt_and_format_diagnosis.md`](prompt_and_format_diagnosis.md),
+  [`prompt_parity_verification.md`](prompt_parity_verification.md)).
