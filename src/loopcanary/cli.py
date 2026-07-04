@@ -103,7 +103,7 @@ def _records_path(output: Path | None) -> Path:
     if output is not None:
         return output
     stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    return Path(f"./monitorstress_run_{stamp}.json")
+    return Path(f"./loopcanary_run_{stamp}.json")
 
 
 def _write_records(
@@ -158,7 +158,7 @@ def run(
     ] = 5.0,
     output: Annotated[
         Path | None,
-        typer.Option("--output", "-o", help="Path for the raw scores JSON. Defaults to ./monitorstress_run_<timestamp>.json."),
+        typer.Option("--output", "-o", help="Path for the raw scores JSON. Defaults to ./loopcanary_run_<timestamp>.json."),
     ] = None,
     model: Annotated[
         str,

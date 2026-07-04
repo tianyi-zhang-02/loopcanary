@@ -203,7 +203,7 @@ def test_default_output_path_uses_timestamp(
         app, ["run", "--limit", "10", "--budget-usd", "10.0"]
     )
     assert result.exit_code == 0
-    written = list(tmp_path.glob("monitorstress_run_*.json"))
+    written = list(tmp_path.glob("loopcanary_run_*.json"))
     assert len(written) == 1
 
 

@@ -58,5 +58,8 @@ notebooks/malt_recon_outputs.json
 notebooks/*_outputs.json
 notebooks/*.parquet
 
-# CLI per-run records (written to repo root by `monitorstress run --output`)
+# CLI per-run records (written to repo root by `loopcanary run --output`)
+loopcanary_run_*.json
+# (legacy pattern from before the monitorstress -> loopcanary rename;
+# kept so old local run artefacts stay ignored)
 monitorstress_run_*.json

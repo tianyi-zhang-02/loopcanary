@@ -112,7 +112,7 @@ loopcanary run [OPTIONS]
 | `--limit` | `60` | Trajectories to evaluate. Loaded balanced 50/50 pos/neg if possible. Hard cap `1000`. |
 | `--subset` | `manually_reviewed` | `manually_reviewed` or `all`. Passed through to the MALT loader. |
 | `--budget-usd` | `5.0` | Hard cap on API spend. Pipeline aborts cleanly when reached, partial report. |
-| `--output` | `./monitorstress_run_<UTC timestamp>.json` | Where the records + report JSON are written. |
+| `--output` | `./loopcanary_run_<UTC timestamp>.json` | Where the records + report JSON are written. |
 
 ### Exit codes
 
