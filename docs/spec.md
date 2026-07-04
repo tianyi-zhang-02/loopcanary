@@ -1,5 +1,16 @@
 # monitorstress v0.1 specification — as built
 
+> **SUPERSEDED.** This document describes the v0.1 batch-CLI shape of
+> `monitorstress` (stress-tests AI safety monitors on saved MALT
+> trajectories). The project pivoted 2026-06-08 to an open-source
+> Python library for streaming agent-loop observability — see
+> [`README.md`](../README.md) and
+> [`pivot_v1_agentic.md`](pivot_v1_agentic.md) for the current
+> direction. Content below is retained as the accurate description of
+> what the v0.1 code on `main` still does (the batch CLI remains
+> runnable), and as decision history for how the project arrived at
+> the current v1.0 plan.
+
 This is the canonical record of what v0.1 of monitorstress actually ships,
 written *after* implementation rather than before. If anything else in the
 repo's documentation disagrees with this file, this file is authoritative
