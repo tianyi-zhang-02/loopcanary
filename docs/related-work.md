@@ -1,13 +1,13 @@
-# monitorstress — Related Work
+# loopcanary — Related Work
 
-> **SUPERSEDED.** This document describes an earlier framing of monitorstress
+> **SUPERSEDED.** This document describes an earlier framing of loopcanary
 > (multi-layer benchmark-integrity audit). The current direction is a
 > stress-test runner for AI safety monitors — see [README.md](../README.md)
 > and [docs/spec.md](spec.md). Retained for decision history.
 
 Owning the comparisons up front is part of the framework's positioning.
 This doc is intentionally adversarial: for each cluster of prior work,
-what it does well, what monitorstress takes from it, and where monitorstress
+what it does well, what loopcanary takes from it, and where loopcanary
 differs.
 
 The space had three clusters as of mid-2026.
@@ -26,13 +26,13 @@ A LiveCodeBench-derived benchmark with labeled reward-hacking cases.
 - **What it does well.** Provides a labeled evaluation set on real
   code-task trajectories, which is rare. Labels are usable for held-out
   evaluation of new detectors.
-- **What monitorstress takes.** EvilGenie's labeled hacks are the primary
-  evaluation set for monitorstress's Layer 2 in Phase 2 (target ≥ 90% recall,
+- **What loopcanary takes.** EvilGenie's labeled hacks are the primary
+  evaluation set for loopcanary's Layer 2 in Phase 2 (target ≥ 90% recall,
   ≤ 5% FP). Using a real labeled set, instead of synthetic fixtures,
   breaks the circularity of "we wrote the detector and the test cases
   that pass it".
-- **Where monitorstress differs.** EvilGenie is a benchmark with a taxonomy
-  embedded in it. monitorstress is a framework with a composable detector
+- **Where loopcanary differs.** EvilGenie is a benchmark with a taxonomy
+  embedded in it. loopcanary is a framework with a composable detector
   pipeline that can be evaluated *against* EvilGenie and run *over* any
   benchmark.
 
@@ -44,11 +44,11 @@ detectors for workspace-integrity violations.
 - **What it does well.** Workspace-integrity monitoring done right: patch
   tracking is built into the task surface, not bolted on. RHA effectively
   occupies the niche a "Layer-1-only" tool would.
-- **What monitorstress takes.** Validation that workspace integrity is a real,
+- **What loopcanary takes.** Validation that workspace integrity is a real,
   high-precision signal. Implementation cues for FS diff and patch
   tracking.
-- **Where monitorstress differs.** Critically, Layer 1 is **not** monitorstress's
-  wedge — RHA already covers it. monitorstress's contribution is the
+- **Where loopcanary differs.** Critically, Layer 1 is **not** loopcanary's
+  wedge — RHA already covers it. loopcanary's contribution is the
   composition of Layer 1 with deterministic AST analysis (Layer 2) and an
   LLM judge with structured uncertainty (Layer 3), plus a
   benchmark-agnostic verdict schema with per-layer provenance.
@@ -57,19 +57,19 @@ detectors for workspace-integrity violations.
 
 Multi-step tool-use scenarios designed to elicit reward hacking.
 
-- **What monitorstress takes.** Useful as a source of additional positive
+- **What loopcanary takes.** Useful as a source of additional positive
   examples for Layer 3 evaluation, especially for multi-step trajectories
   where Layer 2's per-edit AST signal is weaker.
-- **Where monitorstress differs.** Benchmark vs. framework, again.
+- **Where loopcanary differs.** Benchmark vs. framework, again.
 
 ### TRACE — PatronusAI, January 2026
 
 Synthetic trajectory generation for judge training.
 
-- **What monitorstress takes.** Approach for generating synthetic positive
+- **What loopcanary takes.** Approach for generating synthetic positive
   trajectories when expanding Layer 3 training/eval data — useful as a
   *floor* for coverage rather than as a primary eval set.
-- **Where monitorstress differs.** monitorstress does not rely solely on synthetic
+- **Where loopcanary differs.** loopcanary does not rely solely on synthetic
   data for its eval claims. Synthetic is the floor; real labeled hacks
   (EvilGenie / RHA) are the bar.
 
@@ -84,36 +84,36 @@ score.
 
 A fine-tuned Qwen3-4B trajectory anomaly detector.
 
-**The names are close — TrajAD vs. monitorstress — so this distinction matters.**
+**The names are close — TrajAD vs. loopcanary — so this distinction matters.**
 
 - **What TrajAD is.** A single neural classifier. Input: trajectory.
   Output: a scalar or binary label. End-to-end black-box.
-- **What monitorstress is.** A composed framework. Input: trajectory.
+- **What loopcanary is.** A composed framework. Input: trajectory.
   Output: a structured `AuditVerdict` with per-layer findings, a
   confidence band, escalation provenance, and an explicit abstention
   option.
-- **The relationship.** TrajAD could plug *into* monitorstress as one Layer 3
+- **The relationship.** TrajAD could plug *into* loopcanary as one Layer 3
   provider — a fine-tuned local judge. The converse doesn't make sense:
-  you can't wrap monitorstress's composed verdict structure inside a
+  you can't wrap loopcanary's composed verdict structure inside a
   single-scalar classifier.
-- **Where monitorstress differs.** TrajAD ships a *classifier*; monitorstress
+- **Where loopcanary differs.** TrajAD ships a *classifier*; loopcanary
   ships a *system* that composes a classifier (Layer 3) with
   deterministic signals (Layers 1 + 2) and exposes the disagreement
   structure between them. The disagreement structure is the artifact
-  monitorstress cares about — a single black-box neural classifier hides
+  loopcanary cares about — a single black-box neural classifier hides
   exactly that structure.
 
 ### ATBench, PolicyGuardBench, COBA
 
 Component-based agent behavior auditing. **COBA** (ICML 2026) is
 particularly relevant — its decomposition of "auditing" into
-narrowly-scoped component auditors directly inspires monitorstress's
+narrowly-scoped component auditors directly inspires loopcanary's
 three-layer split and the `taxonomy_tags` field on `SemanticVerdict`.
 (The author of this project also co-authored the COBA paper from the
 NVIDIA × GT EIC Lab collaboration.)
 
-- **Where monitorstress differs.** COBA is a methodological framing applied
-  to a specific eval. monitorstress is the open-source tool that
+- **Where loopcanary differs.** COBA is a methodological framing applied
+  to a specific eval. loopcanary is the open-source tool that
   operationalizes the framing for a defined target — agent benchmark
   submissions — with a stable verdict schema and a CLI.
 
@@ -126,12 +126,12 @@ internal evals predominantly fall here.
 
 - **What this cluster does well.** Catches contextual, novel exploits
   that no rule catalog can express.
-- **What monitorstress takes.** The basic premise — that an LLM judge with
+- **What loopcanary takes.** The basic premise — that an LLM judge with
   the full trajectory in context is a powerful detector — is the
-  foundation of monitorstress's Layer 3.
-- **Where monitorstress differs.** Scalar judge outputs project a
+  foundation of loopcanary's Layer 3.
+- **Where loopcanary differs.** Scalar judge outputs project a
   false-precision number ("0.73") onto a fundamentally ambiguous
-  decision. monitorstress's `SemanticVerdict` returns a categorical label
+  decision. loopcanary's `SemanticVerdict` returns a categorical label
   with a **confidence band**, an explicit **`abstain`** option, and
   **escalation provenance** so a frontier-tier upgrade is visible to
   the caller.
@@ -140,7 +140,7 @@ internal evals predominantly fall here.
 
 ## Synthesis
 
-| | Cluster 1 (benchmarks) | Cluster 2 (classifiers) | Cluster 3 (single-judge) | monitorstress |
+| | Cluster 1 (benchmarks) | Cluster 2 (classifiers) | Cluster 3 (single-judge) | loopcanary |
 |---|:-:|:-:|:-:|:-:|
 | Benchmark-agnostic | ✗ | ✓ | ✓ | ✓ |
 | Composable signals | ✗ | ✗ | ✗ | ✓ |

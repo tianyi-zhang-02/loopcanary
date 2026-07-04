@@ -48,7 +48,7 @@ versions)
   reinforcement). Independently verified via
   `docs/prompt_parity_verification.md`.
 - **PR #5 — repository and package rename** (`bd48601`, 2026-05-31),
-  from `trajaudit` (arXiv name collision) to `monitorstress`.
+  from `trajaudit` (arXiv name collision) to `loopcanary`.
 - **PR #4 — migrated Anthropic monitor to Claude Haiku 4.5** with
   correct pricing.
 - **PR #3 — mockup labelling in README** so no reader could confuse

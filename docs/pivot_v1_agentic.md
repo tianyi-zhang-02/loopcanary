@@ -89,7 +89,7 @@ to rebuild the same issues in the new shape.
 
 **One paragraph pitch:**
 
-`monitorstress` is a Python SDK that instruments an agent's
+`loopcanary` is a Python SDK that instruments an agent's
 execution loop and tells you when its behaviour is degrading. It
 captures every reasoning step, tool call, observation, memory
 write, and compression event. It runs pluggable detectors (safety
@@ -113,7 +113,7 @@ instrument a real production loop.
   behaviour longitudinally, where the existing "score the finished
   transcript" tools don't help.
 
-## What survives from monitorstress-batch (more than you'd guess)
+## What survives from loopcanary-batch (more than you'd guess)
 
 | Component | Fate | Notes |
 |---|---|---|
@@ -121,18 +121,18 @@ instrument a real production loop.
 | `SemanticVerdict` shape (score + abstain + reasoning) | **Reused** | Same shape works for every detector's output — safety monitor, behavioural detector, cost detector. Abstain remains first-class. |
 | `TaxonomyTag` enum | **Extended** | Add behavioural-degradation categories (`repeated_action`, `null_progress`, `context_pressure`, `cost_burn`, `compression_event`). |
 | `M1 invariant` on `ScoreRecord` | **Reused via new record shape** | The `(monitor_score is None) ⟺ abstain` invariant still holds; extends naturally to per-detector signals. |
-| METR prompt monitor (`monitorstress.monitors.metr_prompt`) | **Reused, reshaped** | Becomes one plug-in detector. Its verbatim METR prompt work (PR #6) stands. Instead of running once over the whole trajectory, it runs periodically over the trajectory-so-far (which happens to match METR's actual chunked operational model — see `docs/prompt_and_format_diagnosis.md`). This is a **latent-benefit** of the pivot. |
+| METR prompt monitor (`loopcanary.monitors.metr_prompt`) | **Reused, reshaped** | Becomes one plug-in detector. Its verbatim METR prompt work (PR #6) stands. Instead of running once over the whole trajectory, it runs periodically over the trajectory-so-far (which happens to match METR's actual chunked operational model — see `docs/prompt_and_format_diagnosis.md`). This is a **latent-benefit** of the pivot. |
 | `--model` flag + model-keyed pricing (PR #7) | **Reused** | Every detector that calls an LLM inherits the pricing lookup. Cost tracking becomes central to the new report, not a side feature. |
 | MALT adapter | **Kept for validation** | MALT becomes the validation corpus for the safety-detector plug-in specifically (does our METR-prompt detector actually detect reward hacking?), not the main data source. |
 | Structural transformations (`drop_reasoning`, `truncate_observations`, `pad_with_noops`) | **Reshaped as counterfactuals** | Instead of *"stress-test the monitor"* they become *"replay this run with the compression event at step 30 removed — what would the safety detector have said?"* This is arguably a more interesting research question than the original framing. |
 | Bootstrap-CI / AUROC report card | **Kept for validation, not for main report** | Same reuse story as MALT — used for validating the safety detector on the MALT corpus, not for the main per-run observability report. |
 | CI, test infrastructure, `pytest`+`ruff`+`mypy` discipline | **Reused wholesale** | Zero change. |
 
-## What reshapes / gets removed from monitorstress-batch
+## What reshapes / gets removed from loopcanary-batch
 
 | Component | Fate | Notes |
 |---|---|---|
-| CLI `monitorstress run` command | **Reshaped** | Becomes `monitorstress.watch(agent)` as a context manager or decorator. A thin CLI `monitorstress replay <run-json>` might survive for post-hoc analysis. |
+| CLI `loopcanary run` command | **Reshaped** | Becomes `loopcanary.watch(agent)` as a context manager or decorator. A thin CLI `loopcanary replay <run-json>` might survive for post-hoc analysis. |
 | Batch execution model | **Removed** | The main data flow is now streaming, not batched over MALT. |
 | Report card semantics (AUROC vs. transformations) | **Removed from main report** | Replaced with a **timeline visualisation** — steps × events × detector fires × cost/tokens/context. AUROC math survives only for the safety-detector-on-MALT validation piece. |
 | Fixture-based MALT tests as the primary test suite | **Reshaped** | Still exist for the safety-detector validation piece. But the primary test suite becomes agent-loop instrumentation tests — mock an agent, feed it events, assert the detectors fire correctly. |
@@ -149,7 +149,7 @@ Three integration modes, in decreasing order of ergonomic priority:
 
 ```python
 # 1. Context manager (recommended)
-import monitorstress as ms
+import loopcanary as ms
 
 with ms.watch(
     agent_id="research-assistant",
@@ -193,8 +193,8 @@ New `TrajectoryEvent` variants:
 
 ```python
 from typing import Protocol
-from monitorstress.core.trajectory import Trajectory
-from monitorstress.core.verdict import SemanticVerdict
+from loopcanary.core.trajectory import Trajectory
+from loopcanary.core.verdict import SemanticVerdict
 
 class Detector(Protocol):
     name: str
@@ -213,7 +213,7 @@ class Detector(Protocol):
 - **`cost_burn_rate(usd_per_min_max: float)`** — spend velocity above threshold. Zero-cost detector.
 - **`null_progress(window_steps: int = 5)`** — no observable state change (no new file writes, no unique tool calls, no memory writes) over `window_steps` steps. Zero-cost detector.
 - **`compression_frequency(max_per_hour: int)`** — CompressionEvents firing above rate threshold. Zero-cost detector.
-- **`metr_safety(model: str = "haiku", every_n_steps: int = 5)`** — the existing METR prompt monitor from `src/monitorstress/monitors/metr_prompt.py`, run periodically over the trajectory-so-far. This is the only initial detector that costs money to run.
+- **`metr_safety(model: str = "haiku", every_n_steps: int = 5)`** — the existing METR prompt monitor from `src/loopcanary/monitors/metr_prompt.py`, run periodically over the trajectory-so-far. This is the only initial detector that costs money to run.
 
 ### Report shape
 
@@ -275,7 +275,7 @@ Not planning for T3 unless the project acquires a co-founder.
 Arize Phoenix (LLM observability), Braintrust (evals-first), Anthropic
 Console (Claude-specific per-request usage). All of these do
 event-capture + cost tracking + timeline rendering. All of them are
-larger, better-resourced, and further ahead than monitorstress will
+larger, better-resourced, and further ahead than loopcanary will
 be for years.
 
 **Where they are weak / underserved:**
@@ -300,7 +300,7 @@ be for years.
 - Team collaboration / permissions.
 - Anything requiring hosted infrastructure.
 
-**Framing risk.** If we describe monitorstress as "agent observability," reviewers hear "LangSmith with fewer features." If we describe it as **"the agent-loop degradation and compression diagnostician,"** the niche is legible and defensible. Copy discipline matters here — see the personal-doc reminder about marketing-mode framing (`personal_ops.md` §"Conversation patterns to watch for in myself"). Write about what's true and specific, not about the platform we haven't earned.
+**Framing risk.** If we describe loopcanary as "agent observability," reviewers hear "LangSmith with fewer features." If we describe it as **"the agent-loop degradation and compression diagnostician,"** the niche is legible and defensible. Copy discipline matters here — see the personal-doc reminder about marketing-mode framing (`personal_ops.md` §"Conversation patterns to watch for in myself"). Write about what's true and specific, not about the platform we haven't earned.
 
 ## Risks and open questions
 
@@ -314,9 +314,9 @@ be for years.
 **Open questions:**
 
 1. **Which Sonnet re-run before committing to the pivot?** Do the n=60 first, decide whether to pivot based on the result. Recommended.
-2. **Should we rename?** "monitorstress" reads as "stress-testing monitors" — accurate for the current shape, ambiguous for the new one. Options: keep (double meaning is fine), rename to something like `agentwatch` or `looplens` or `driftlens`. Renaming again is expensive (see the `trajaudit → monitorstress` rename PR trail); recommend defer until v1.1 unless the current name blocks the elevator pitch.
+2. **Should we rename?** "loopcanary" reads as "stress-testing monitors" — accurate for the current shape, ambiguous for the new one. Options: keep (double meaning is fine), rename to something like `agentwatch` or `looplens` or `driftlens`. Renaming again is expensive (see the `trajaudit → loopcanary` rename PR trail); recommend defer until v1.1 unless the current name blocks the elevator pitch.
 3. **Anchor framework — Claude Agent SDK first, LangChain second?** Or in parallel? Recommend: Claude Agent SDK first for tighter integration and audience match; LangChain adapter as v1.1.
-4. **How does the pre-pivot batch mode survive?** Two options: (a) `monitorstress replay --input <MALT-corpus>` becomes a lightweight adapter that reuses the new detector framework over saved MALT trajectories — best of both worlds; (b) drop batch mode entirely. Recommend option (a): it costs little and preserves the MALT-validation story for the safety detector.
+4. **How does the pre-pivot batch mode survive?** Two options: (a) `loopcanary replay --input <MALT-corpus>` becomes a lightweight adapter that reuses the new detector framework over saved MALT trajectories — best of both worlds; (b) drop batch mode entirely. Recommend option (a): it costs little and preserves the MALT-validation story for the safety detector.
 5. **Detector output vs. safety-monitor output — are they the same thing?** Currently `SemanticVerdict` is designed for safety monitors. Repurposing it for behavioural detectors ("this ran 3 times in a row") slightly stretches the semantics. Alternative: separate `DetectorSignal` type. Recommend: use `SemanticVerdict` for v1 to minimise data-model churn; reconsider if it turns out to be a poor fit for behavioural signals.
 
 ## Immediate next steps (if this plan is approved)
@@ -337,11 +337,11 @@ be for years.
 
 **Second code commit — detector protocol:**
 
-5. **Define the `Detector` protocol** in `src/monitorstress/detectors/__init__.py`. Ship the first zero-cost detector (`repeated_action`) as the reference implementation. No agent-loop integration yet.
+5. **Define the `Detector` protocol** in `src/loopcanary/detectors/__init__.py`. Ship the first zero-cost detector (`repeated_action`) as the reference implementation. No agent-loop integration yet.
 
 **Third code commit — the SDK entry point:**
 
-6. **`monitorstress.watch()` context manager** that captures events (initially: hand-supplied by test callers, not yet from a live agent). Detectors registered against it fire on each new event. Report emitted at exit.
+6. **`loopcanary.watch()` context manager** that captures events (initially: hand-supplied by test callers, not yet from a live agent). Detectors registered against it fire on each new event. Report emitted at exit.
 
 **Fourth code commit — first live integration:**
 
@@ -357,7 +357,7 @@ open-source community-serving tool, not an internal research artefact.*
 This clarification changes several defaults in the plan above.
 
 **API-surface bar rises.** *"Easy to plug into their workflow"*
-means the acceptance test is: **`pip install monitorstress` → one
+means the acceptance test is: **`pip install loopcanary` → one
 `import` → one context manager, working output within ten minutes on
 a fresh machine.** No hidden config, no environment setup beyond
 whatever the user already has for their agent runtime. The three
@@ -394,11 +394,11 @@ the audience is public. Shortlist:
 | `agentgaze` | Memorable. Poetic. | Ambiguous meaning; may read as monitoring-of-users rather than monitoring-by-agent |
 | `agentscope` | Reads as "scope for observing agents". Clear. | Overlap with "agent scope" in agent-framework discourse |
 | `driftwatch` | Watchdog framing. Concrete verb. | Similar to `agentwatch`, may hit LangSmith-adjacent naming |
-| Keep `monitorstress` | Zero cost. Double meaning (stress-testing monitors + stress-testing agents-with-monitors) is defensible. | Reads as a *benchmark*, not a *library*. SEO for "agent observability" is poor. |
+| Keep `loopcanary` | Zero cost. Double meaning (stress-testing monitors + stress-testing agents-with-monitors) is defensible. | Reads as a *benchmark*, not a *library*. SEO for "agent observability" is poor. |
 
 **My recommendation:** `driftlens` or `looplens`. Both convey the
 niche (degradation over time) without over-claiming a platform.
-Decision is Tianyi's — the last rename (trajaudit → monitorstress)
+Decision is Tianyi's — the last rename (trajaudit → loopcanary)
 had real cost (six commits, cross-file cleanup, external references
 updated). Doing it *now*, before v1.0 code lands and before external
 references accumulate, is meaningfully cheaper than doing it later.

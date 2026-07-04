@@ -6,7 +6,7 @@ agent-loop observability accepted; implementation not yet started.*
 
 ## Identity
 
-`monitorstress` is transitioning from **"batch CLI that
+`loopcanary` is transitioning from **"batch CLI that
 stress-tests AI safety monitors on saved MALT trajectories"**
 (v0.1, on `main`, functional) to **"open-source Python library for
 agent-loop observability with named degradation detectors and
@@ -40,10 +40,10 @@ runnable on `main`.
 
 ## Open decisions
 
-- **Package rename before v1.0?** `monitorstress` reads as a
+- **Package rename before v1.0?** `loopcanary` reads as a
   benchmark tool; the pivot plan discusses discoverability for OSS
   distribution. Shortlist: `driftlens`, `looplens`, `agentgaze`,
-  `agentscope`, `driftwatch`, or keep `monitorstress` (double
+  `agentscope`, `driftwatch`, or keep `loopcanary` (double
   meaning). See
   [`pivot_v1_agentic.md#open-source-distribution-considerations`](pivot_v1_agentic.md).
   Cost of renaming again is real (last rename was PR #5's six-commit
@@ -78,7 +78,7 @@ runnable on `main`.
   "if you are unsure" hint, closing reinforcement); wrote and
   independently verified via `docs/prompt_parity_verification.md`.
 - **PR #5 — repository and package rename** (`bd48601`), from
-  `trajaudit` (arXiv name collision) to `monitorstress`.
+  `trajaudit` (arXiv name collision) to `loopcanary`.
 - **PR #4 — Anthropic monitor migrated to Claude Haiku 4.5** with
   correct pricing.
 

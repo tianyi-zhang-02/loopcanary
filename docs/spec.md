@@ -1,7 +1,7 @@
-# monitorstress v0.1 specification — as built
+# loopcanary v0.1 specification — as built
 
 > **SUPERSEDED.** This document describes the v0.1 batch-CLI shape of
-> `monitorstress` (stress-tests AI safety monitors on saved MALT
+> `loopcanary` (stress-tests AI safety monitors on saved MALT
 > trajectories). The project pivoted 2026-06-08 to an open-source
 > Python library for streaming agent-loop observability — see
 > [`README.md`](../README.md) and
@@ -11,7 +11,7 @@
 > runnable), and as decision history for how the project arrived at
 > the current v1.0 plan.
 
-This is the canonical record of what v0.1 of monitorstress actually ships,
+This is the canonical record of what v0.1 of loopcanary actually ships,
 written *after* implementation rather than before. If anything else in the
 repo's documentation disagrees with this file, this file is authoritative
 for the v0.1 surface; conflicts should be resolved by editing the other
@@ -20,7 +20,7 @@ doc to match.
 ## What v0.1 is
 
 A CLI stress-test runner for AI safety monitors. Given a corpus of agent
-trajectories with ground-truth labels, monitorstress:
+trajectories with ground-truth labels, loopcanary:
 
 1. Applies three structural transformations to each trajectory (drop the
    reasoning, truncate the end, pad with noop tool calls).
@@ -33,21 +33,21 @@ trajectories with ground-truth labels, monitorstress:
 The whole pipeline runs as a single CLI invocation:
 
 ```
-monitorstress run --monitor metr --limit 60 --budget-usd 5.00
+loopcanary run --monitor metr --limit 60 --budget-usd 5.00
 ```
 
 ## What v0.1 ships
 
 | Surface | Module | Notes |
 |---|---|---|
-| Trajectory event-stream model | `monitorstress.core.events` + `monitorstress.core.trajectory` | Pre-existed; unchanged by v0.1. |
-| Verdict + taxonomy | `monitorstress.core.verdict` | Pre-existed; unchanged by v0.1. |
-| MALT adapter | `monitorstress.adapters.malt` | `load_malt_split()`, `malt_row_to_trajectory()`. Requires `HF_TOKEN`. |
-| Structural transformations | `monitorstress.transformations.structural` | `drop_reasoning`, `truncate_observations`, `pad_with_noops`, `apply_structural_battery`. Pure functions. |
-| Monitor protocol | `monitorstress.monitors.Monitor` | Runtime-checkable Protocol. `name: str` + `score(Trajectory) -> SemanticVerdict`. |
-| METR monitor | `monitorstress.monitors.metr_prompt.METRPromptMonitor` | Verbatim METR MALT reward-hacking prompt; calls `claude-haiku-4-5-20251001`. |
-| Report card | `monitorstress.report` | `compute_report()`, `ScoreRecord`, `ReportCard`, `TransformReport`. |
-| CLI | `monitorstress.cli` | Single command: `monitorstress run`. |
+| Trajectory event-stream model | `loopcanary.core.events` + `loopcanary.core.trajectory` | Pre-existed; unchanged by v0.1. |
+| Verdict + taxonomy | `loopcanary.core.verdict` | Pre-existed; unchanged by v0.1. |
+| MALT adapter | `loopcanary.adapters.malt` | `load_malt_split()`, `malt_row_to_trajectory()`. Requires `HF_TOKEN`. |
+| Structural transformations | `loopcanary.transformations.structural` | `drop_reasoning`, `truncate_observations`, `pad_with_noops`, `apply_structural_battery`. Pure functions. |
+| Monitor protocol | `loopcanary.monitors.Monitor` | Runtime-checkable Protocol. `name: str` + `score(Trajectory) -> SemanticVerdict`. |
+| METR monitor | `loopcanary.monitors.metr_prompt.METRPromptMonitor` | Verbatim METR MALT reward-hacking prompt; calls `claude-haiku-4-5-20251001`. |
+| Report card | `loopcanary.report` | `compute_report()`, `ScoreRecord`, `ReportCard`, `TransformReport`. |
+| CLI | `loopcanary.cli` | Single command: `loopcanary run`. |
 
 ## What v0.1 does NOT ship
 
@@ -63,7 +63,7 @@ Explicit non-scope, deferred to v0.2+:
 - **Layer 1 sandbox.** No Docker replay, no filesystem diff.
 - **Layer 2 syntactic scanner.** No AST detection of exploit patterns.
 - **Leaderboard / `compare` CLI commands.** Removed in the Task 4 rewrite
-  of `cli.py` (`feat(cli): add monitorstress run command`). Tracked for
+  of `cli.py` (`feat(cli): add loopcanary run command`). Tracked for
   v0.2+ in `docs/followups.md`.
 - **Web UI of any kind.** CLI only.
 
@@ -74,28 +74,28 @@ Anything else is private and may change without notice in 0.x.
 
 ```python
 # Data model
-from monitorstress.core.trajectory import Trajectory, HarnessResult
-from monitorstress.core.events import (
+from loopcanary.core.trajectory import Trajectory, HarnessResult
+from loopcanary.core.events import (
     TrajectoryEvent, ReasoningEvent, ToolCallEvent, ObservationEvent, ScoringEvent,
 )
-from monitorstress.core.verdict import (
+from loopcanary.core.verdict import (
     SemanticVerdict, SemanticLabel, TaxonomyTag, IntegrityLabel, Severity,
     WorkspaceFinding, SyntacticFinding, AuditVerdict,
 )
 
 # Adapter
-from monitorstress.adapters.malt import load_malt_split, malt_row_to_trajectory
+from loopcanary.adapters.malt import load_malt_split, malt_row_to_trajectory
 
 # Transformations
-from monitorstress.transformations import (
+from loopcanary.transformations import (
     drop_reasoning, truncate_observations, pad_with_noops, apply_structural_battery,
 )
 
 # Monitors
-from monitorstress.monitors import Monitor, METRPromptMonitor
+from loopcanary.monitors import Monitor, METRPromptMonitor
 
 # Report
-from monitorstress.report import (
+from loopcanary.report import (
     ScoreRecord, TransformReport, ReportCard, compute_report,
 )
 ```
@@ -103,7 +103,7 @@ from monitorstress.report import (
 ## CLI specification
 
 ```
-monitorstress run [OPTIONS]
+loopcanary run [OPTIONS]
 ```
 
 | Option | Default | Notes |
@@ -154,7 +154,7 @@ commits and `docs/auto_session_questions.md`:
   HF calls in tests; all external dependencies are mocked or
   fixture-driven.
 - `ruff check .` clean across the full tree.
-- `mypy src/monitorstress` clean across 38 source files.
+- `mypy src/loopcanary` clean across 38 source files.
 
 ## Outstanding items before v0.1.0 release tag
 
