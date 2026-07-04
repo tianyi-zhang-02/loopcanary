@@ -11,7 +11,7 @@ import random
 import pytest
 from rich.console import Console
 
-from monitorstress.report import (
+from loopcanary.report import (
     ScoreRecord,
     TransformReport,
     compute_report,

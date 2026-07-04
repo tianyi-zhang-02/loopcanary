@@ -1,5 +1,5 @@
 [project]
-name = "monitorstress"
+name = "loopcanary"
 version = "0.0.1"
 description = "Multi-layer audit framework for agent benchmark integrity"
 readme = "README.md"
@@ -48,18 +48,18 @@ dev = [
 ]
 
 [project.scripts]
-monitorstress = "monitorstress.cli:app"
+loopcanary = "loopcanary.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/tianyi-zhang-02/monitorstress"
-Issues = "https://github.com/tianyi-zhang-02/monitorstress/issues"
+Homepage = "https://github.com/tianyi-zhang-02/loopcanary"
+Issues = "https://github.com/tianyi-zhang-02/loopcanary/issues"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/monitorstress"]
+packages = ["src/loopcanary"]
 
 [tool.ruff]
 line-length = 100
@@ -75,14 +75,14 @@ strict = false
 warn_unused_ignores = true
 warn_redundant_casts = true
 ignore_missing_imports = true
-files = ["src/monitorstress"]
+files = ["src/loopcanary"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 
 [tool.coverage.run]
-source = ["src/monitorstress"]
+source = ["src/loopcanary"]
 branch = true
 
 [dependency-groups]

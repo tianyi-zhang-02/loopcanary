@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from monitorstress.core.events import (
+from loopcanary.core.events import (
     ObservationEvent,
     ReasoningEvent,
     ScoringEvent,
     ToolCallEvent,
 )
-from monitorstress.core.trajectory import Trajectory
+from loopcanary.core.trajectory import Trajectory
 
 
 @pytest.fixture

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from monitorstress.core.events import (
+from loopcanary.core.events import (
     ObservationEvent,
     ReasoningEvent,
     ScoringEvent,
     ToolCallEvent,
 )
-from monitorstress.core.trajectory import Trajectory
+from loopcanary.core.trajectory import Trajectory
 
 
 def _sample_trajectory() -> Trajectory:

@@ -7,11 +7,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from monitorstress.core.events import ReasoningEvent, ToolCallEvent
-from monitorstress.core.trajectory import Trajectory
-from monitorstress.core.verdict import SemanticLabel
-from monitorstress.monitors import Monitor
-from monitorstress.monitors.metr_prompt import METRPromptMonitor
+from loopcanary.core.events import ReasoningEvent, ToolCallEvent
+from loopcanary.core.trajectory import Trajectory
+from loopcanary.core.verdict import SemanticLabel
+from loopcanary.monitors import Monitor
+from loopcanary.monitors.metr_prompt import METRPromptMonitor
 
 
 def _trajectory() -> Trajectory:
@@ -153,7 +153,7 @@ def test_retry_then_fail_after_max_attempts(monkeypatch: pytest.MonkeyPatch) -> 
     client.messages.create.side_effect = _FakeRateLimitError()
 
     # Patch time.sleep to keep the test fast.
-    import monitorstress.monitors.metr_prompt as metr_mod
+    import loopcanary.monitors.metr_prompt as metr_mod
 
     monkeypatch.setattr(metr_mod, "time", MagicMock())
     monitor = METRPromptMonitor(client=client, max_retries=3)
@@ -215,7 +215,7 @@ def test_pricing_table_contains_expected_models() -> None:
     This test pins the contents so a silent change to pricing or to model
     coverage breaks visibly rather than producing wrong dollar figures.
     """
-    from monitorstress.monitors.metr_prompt import _PRICING_USD_PER_MTOK
+    from loopcanary.monitors.metr_prompt import _PRICING_USD_PER_MTOK
 
     assert _PRICING_USD_PER_MTOK["claude-haiku-4-5-20251001"] == (1.0, 5.0)
     assert _PRICING_USD_PER_MTOK["claude-sonnet-4-5-20250929"] == (3.0, 15.0)
