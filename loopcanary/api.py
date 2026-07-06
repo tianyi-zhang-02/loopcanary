@@ -19,7 +19,7 @@ own ``Canary``.
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Set
 from typing import Literal
 
 from loopcanary.detectors import default_detectors
@@ -73,21 +73,25 @@ class Canary:
         output: str | bytes | Mapping[str, object],
         tokens: int | None = None,
         action_type: str = "action",
+        action_volatile: Set[str] = frozenset(),
+        output_volatile: Set[str] = frozenset(),
         metadata: Mapping[str, str] | None = None,
         model_signals: ModelSignals | None = None,
     ) -> list[Signal]:
         """Build a :class:`LoopEvent` from raw parts and observe it.
 
         Auto-increments the step counter, fingerprints ``action`` and
-        ``output``, and timestamps the event. This is the ergonomic path for
-        loops that don't already produce ``LoopEvent`` objects.
+        ``output``, and timestamps the event. ``action_volatile`` and
+        ``output_volatile`` strip caller-marked mapping keys such as
+        timestamps or request IDs before hashing. This is the ergonomic path
+        for loops that don't already produce ``LoopEvent`` objects.
         """
         self._step += 1
         event = LoopEvent(
             step=self._step,
             action_type=action_type,
-            action_fingerprint=fingerprint(action),
-            output_fingerprint=fingerprint(output),
+            action_fingerprint=fingerprint(action, volatile=action_volatile),
+            output_fingerprint=fingerprint(output, volatile=output_volatile),
             tokens_in_context=tokens,
             metadata=metadata,
             model_signals=model_signals,

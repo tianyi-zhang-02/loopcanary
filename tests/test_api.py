@@ -36,6 +36,38 @@ def test_observe_raw_fingerprints_and_fires_repeated_action() -> None:
     assert any(s.detector == "repeated_action" and s.severity is Severity.WARN for s in fired)
 
 
+def test_observe_raw_strips_volatile_mapping_keys() -> None:
+    events = []
+
+    class _Probe:
+        name = "probe"
+        consumes = frozenset({"event"})
+
+        def consume(self, item):  # type: ignore[no-untyped-def]
+            events.append(item)
+            return []
+
+        def reset(self) -> None:
+            events.clear()
+
+    canary = Canary(detectors=[_Probe()])
+    canary.observe_raw(
+        action={"cmd": "python train.py --resume", "request_id": "a"},
+        output={"status": "missing checkpoint", "timestamp": "10:00"},
+        action_volatile={"request_id"},
+        output_volatile={"timestamp"},
+    )
+    canary.observe_raw(
+        action={"cmd": "python train.py --resume", "request_id": "b"},
+        output={"status": "missing checkpoint", "timestamp": "10:01"},
+        action_volatile={"request_id"},
+        output_volatile={"timestamp"},
+    )
+
+    assert events[0].action_fingerprint == events[1].action_fingerprint
+    assert events[0].output_fingerprint == events[1].output_fingerprint
+
+
 def test_on_signal_callback_invoked() -> None:
     received: list[Signal] = []
     canary = Canary(on_signal=received.append)

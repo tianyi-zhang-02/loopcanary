@@ -39,7 +39,20 @@ for detector, counts in canary.summary().items():
 ```
 
 `observe_raw` fingerprints the action and output for you and auto-increments
-the step counter. If you already build event objects, feed them directly:
+the step counter. For mapping payloads that carry run-specific fields, pass
+`action_volatile` or `output_volatile` so values like request IDs and
+timestamps do not hide repeated behavior:
+
+```python
+canary.observe_raw(
+    action={"tool": "bash", "cmd": "python train.py --resume", "request_id": rid},
+    output={"error": "FileNotFoundError", "timestamp": now},
+    action_volatile={"request_id"},
+    output_volatile={"timestamp"},
+)
+```
+
+If you already build event objects, feed them directly:
 
 ```python
 from loopcanary import Canary, LoopEvent, fingerprint

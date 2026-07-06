@@ -134,12 +134,29 @@ def test_null_progress_reset() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_context_pressure_none_tokens_disables_once() -> None:
+def test_context_pressure_none_tokens_announces_once() -> None:
     det = ContextPressure()
     sigs = feed(det, [ev(i, tokens=None) for i in range(5)])
     assert len(sigs) == 1
     assert sigs[0].severity is Severity.INFO
     assert sigs[0].pattern == "disabled_no_tokens"
+
+
+def test_context_pressure_recovers_after_initial_tokenless_events() -> None:
+    det = ContextPressure(abs_threshold=1000, window=2)
+    sigs = feed(
+        det,
+        [
+            ev(0, tokens=None),
+            ev(1, tokens=None),
+            ev(2, tokens=500),
+            ev(3, tokens=1200),
+        ],
+    )
+    assert any(s.pattern == "disabled_no_tokens" for s in sigs)
+    threshold = [s for s in sigs if s.pattern == "context_over_threshold"]
+    assert len(threshold) == 1
+    assert threshold[0].evidence["tokens"] == 1200
 
 
 def test_context_pressure_absolute_threshold_fires_once() -> None:

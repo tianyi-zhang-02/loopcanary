@@ -14,8 +14,9 @@ Two failure shapes, one detector:
    the rising edge.
 
 Handles missing token counts gracefully: if ``tokens_in_context`` is
-``None``, the detector self-disables and emits a single INFO signal saying
-so, then stays silent (it never crashes the host).
+``None``, the detector emits a single INFO signal saying token-bearing
+events are needed, skips those events, and resumes automatically if later
+events carry token counts (it never crashes the host).
 
 Defaults ``abs_threshold=100_000`` (near common context limits — set it to
 roughly 0.8 × your model's window), ``rate_threshold=2000`` tokens/step
@@ -54,7 +55,6 @@ class ContextPressure:
         self._recent: deque[tuple[int, int, str]] = deque(maxlen=window)
         self._abs_fired = False
         self._rate_fired = False
-        self._disabled = False
         self._disabled_announced = False
 
     def consume(self, item: LoopEvent | Signal) -> list[Signal]:
@@ -62,10 +62,10 @@ class ContextPressure:
             return []
 
         if item.tokens_in_context is None:
-            # Self-disable once, loudly but harmlessly.
+            # Announce once, then skip tokenless events without poisoning
+            # future token-bearing events in mixed streams.
             if self._disabled_announced:
                 return []
-            self._disabled = True
             self._disabled_announced = True
             return [
                 Signal(
@@ -73,12 +73,10 @@ class ContextPressure:
                     severity=Severity.INFO,
                     step=item.step,
                     pattern="disabled_no_tokens",
-                    message="context_pressure disabled: events carry no token counts",
+                    message="context_pressure needs token counts; skipping tokenless events",
                     evidence={"reason": "tokens_in_context is None"},
                 )
             ]
-        if self._disabled:
-            return []
 
         tokens = item.tokens_in_context
         self._recent.append((item.step, tokens, item.output_fingerprint))
@@ -137,5 +135,4 @@ class ContextPressure:
         self._recent.clear()
         self._abs_fired = False
         self._rate_fired = False
-        self._disabled = False
         self._disabled_announced = False

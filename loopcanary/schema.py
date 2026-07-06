@@ -17,7 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Set
 from dataclasses import dataclass, field
 
 __all__ = ["ModelSignals", "LoopEvent", "fingerprint"]
@@ -81,7 +81,7 @@ class LoopEvent:
 def fingerprint(
     payload: str | bytes | Mapping[str, object],
     *,
-    volatile: frozenset[str] = frozenset(),
+    volatile: Set[str] = frozenset(),
 ) -> str:
     """Stable content hash: canonical-JSON → sha256 → first 16 hex chars.
 
