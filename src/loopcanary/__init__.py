@@ -1,29 +1,32 @@
-"""TrajAudit — multi-layer audit framework for agent benchmark integrity.
+"""loopcanary — agent-loop observability SDK (in development).
 
-TrajAudit is a post-hoc auditor that ingests agent trajectories from
-benchmarks such as SWE-bench Verified and Terminal-Bench, then runs a
-three-layer audit pipeline over them:
+loopcanary watches an agent's execution loop and diagnoses when its
+behaviour is degrading, its context is compressing, or its cost is
+running away — via named detectors and a per-run timeline.
 
-* :mod:`loopcanary.layer1_workspace` — workspace integrity (Docker
-  sandbox replay, filesystem diff, subprocess tracing).
-* :mod:`loopcanary.layer2_syntactic` — syntactic exploit detection
-  (AST-based pattern matching against a curated exploit taxonomy).
-* :mod:`loopcanary.layer3_semantic` — semantic trajectory analysis
-  (LLM-as-judge with multi-tier escalation from local vLLM models to
-  frontier APIs).
+This repository currently contains the **data-model seed** the SDK is
+built on:
 
-The three layers compose into a
-:class:`loopcanary.core.verdict.AuditVerdict` per trajectory — a
-structured object with per-layer provenance, a Layer 3 confidence band,
-and an explicit ``uncertain`` outcome rather than a single scalar score.
-:mod:`loopcanary.reporting` aggregates verdicts into integrity-adjusted
-leaderboards and the ``compare`` ranking diff.
+* :mod:`loopcanary.core.events` — the discriminated ``TrajectoryEvent``
+  variants (reasoning, tool call, observation, scoring).
+* :mod:`loopcanary.core.trajectory` — the ``Trajectory`` container.
+* :mod:`loopcanary.core.verdict` — ``SemanticVerdict`` and the
+  taxonomy, the shape every detector returns.
 
-See ``docs/architecture.md`` for the conceptual write-up.
+The v1.0 SDK surface (``watch()`` context manager, the ``Detector``
+protocol, the initial detector set, the timeline report) is specified
+in ``docs/pivot_v1_agentic.md`` and not yet implemented.
+
+The pre-pivot batch experiments (MALT ingestion, structural
+transformations, the METR reward-hacking monitor, AUROC report card)
+and the SaTML research finding live in a separate repository,
+`monitorstress <https://github.com/tianyi-zhang-02/monitorstress>`_.
+The two repositories are intentionally independent and neither imports
+the other.
 """
 
 from __future__ import annotations
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 __all__ = ["__version__"]

@@ -1,7 +1,7 @@
 [project]
 name = "loopcanary"
-version = "0.0.1"
-description = "Multi-layer audit framework for agent benchmark integrity"
+version = "0.1.0"
+description = "Agent-loop observability SDK: diagnose degradation, context compression, and cost run-away in agent loops."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Tianyi Zhang" }]
@@ -9,10 +9,10 @@ requires-python = ">=3.11"
 keywords = [
     "llm",
     "agent",
-    "benchmark",
-    "evaluation",
-    "reward-hacking",
-    "audit",
+    "observability",
+    "monitoring",
+    "detector",
+    "agent-loop",
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -23,22 +23,16 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+# SDK seed: the data model needs only pydantic. The v1.0 SDK will add
+# deps as it is built (e.g. rich for the timeline renderer, anthropic
+# for the metr_safety detector under the [llm] extra).
 dependencies = [
     "pydantic>=2.6,<3",
-    "typer>=0.12,<1",
-    "datasets>=2.18,<4",
-    "rich>=13.0,<15",
-    "scikit-learn>=1.4,<2",
-    "numpy>=1.26,<3",
 ]
 
 [project.optional-dependencies]
 llm = [
     "anthropic>=0.40,<1",
-    "openai>=1.50,<3",
-]
-sandbox = [
-    "docker>=7.1,<8",
 ]
 dev = [
     "pytest>=8.0,<9",
@@ -46,9 +40,6 @@ dev = [
     "ruff>=0.6,<1",
     "mypy>=1.10,<2",
 ]
-
-[project.scripts]
-loopcanary = "loopcanary.cli:app"
 
 [project.urls]
 Homepage = "https://github.com/tianyi-zhang-02/loopcanary"
