@@ -50,8 +50,9 @@ straight into your existing traces.
 pip install loopcanary
 ```
 
-Wrap your agent loop in five lines. Works with any loop — here it is
-around a **Claude Agent SDK / Claude Code**-style run:
+Wrap **any agent loop you run in your own Python process** in five
+lines — the Claude Agent SDK, LangChain, LlamaIndex, a hand-rolled
+`while` loop, or an RL rollout worker:
 
 ```python
 import loopcanary as lc
@@ -81,6 +82,14 @@ graded = lc.instrument(my_llm_call, detectors=[...])
 def run_task(agent, task): ...
 ```
 
+**Claude Code / Codex and other CLI agents** aren't in-process Python
+loops you wrap — they're separate processes. loopcanary reaches them
+through a thin **adapter** that consumes what the CLI emits (Claude
+Code hooks, OpenTelemetry export, or session logs) and runs the same
+detectors alongside it. Those adapters are v1.1 (see
+[`docs/v1_scope.md`](docs/v1_scope.md)); v1.0 is the in-process library
+for loops you control.
+
 ## What it detects (v1.0)
 
 All deterministic, all zero-cost — no model calls, no network:
@@ -93,10 +102,32 @@ All deterministic, all zero-cost — no model calls, no network:
 | `cost_burn_rate` | spend velocity exceeds a USD/min threshold |
 | `compression_frequency` | context-compaction events fire above a rate |
 
-Detectors are a `Protocol` — bring your own in ~20 lines. An optional,
-**opt-in** LLM detector (`metr_safety`, off by default) exists for
-reward-hacking checks; it is the one thing that sends data out of your
-process, and it says so loudly.
+Detectors are a `Protocol` — bring your own in ~20 lines.
+
+### Detectors are layered
+
+Detectors are layered: deterministic detectors run always-on at
+near-zero cost; optional detectors (LLM-judge, learned probes) can
+consume their signals for second-stage confirmation. **v1 ships the
+deterministic layer; the cascade interface is stable.**
+
+Concretely, the cheap layer scans every step and flags suspicious
+windows; an opt-in second-stage detector fires *only on the flagged
+windows* — "is this repeated action really stuck, or a legit retry?"
+That's the standard cheap-filter → expensive-confirm shape: the judge
+runs on the <5% of steps that were flagged, not a forward pass on
+every step, and it filters the cheap layer's false positives while the
+cheap layer keeps recall. It's a notch smarter than running two
+detectors in parallel.
+
+The default install is **pure deterministic** — that never changes;
+it's what runs in a rollout worker. The judge is an opt-in extra
+(`pip install loopcanary[judge]`): install it and you gain a detector;
+don't and the core is a gram lighter. It is the one thing that sends
+data out of your process, and it says so loudly. The judge itself, a
+cascade reference implementation, and the precision-uplift numbers are
+v1.1+/research — v1.0 ships only the interface that makes the cascade
+buildable, not a refactor.
 
 ## Where it runs that platforms can't
 

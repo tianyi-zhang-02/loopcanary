@@ -22,8 +22,17 @@ doesn't go in v1.0.
 - `lc.instrument(callable, detectors=[...])` — wrap any callable
   (covers LangChain, custom loops, Claude Agent SDK).
 - `@lc.watch(...)` decorator.
-- `Detector` protocol — `check(trajectory_so_far) -> Signal | None`,
-  cheap, called per event. Users bring their own in ~20 lines.
+- `Detector` protocol — cheap, called per event. Users bring their own
+  in ~20 lines.
+- **The cascade interface (the one thing added for layering):** a
+  detector can consume the event stream **or** the signals emitted by
+  upstream detectors — `check(events_so_far, signals_so_far) -> Signal
+  | None`. This ten-line interface decision is what makes a
+  cheap-filter → expensive-confirm cascade *buildable* rather than a
+  refactor: a second-stage detector keys off first-stage signals and
+  fires only on flagged windows. v1.0 ships **only this interface** —
+  not the judge, not a cascade reference implementation, not
+  precision-uplift numbers (those are v1.1+/research).
 
 **Detectors (all deterministic, zero model calls, zero network)**
 - `repeated_action(threshold)` — hash of (tool, args) repeats N times.
@@ -51,8 +60,9 @@ doesn't go in v1.0.
 **Docs**
 - Honest README with the "library not platform" line and the
   "why not a Langfuse eval?" answer (done).
-- One runnable `examples/` script per integration shape, one showing a
-  Claude Code / Claude Agent SDK loop.
+- One runnable `examples/` script per integration shape (Claude Agent
+  SDK, LangChain, a hand-rolled loop). CLI agents (Claude Code / Codex)
+  are v1.1 adapters, not v1.0 examples.
 - `CONTRIBUTING` oriented to API-shape feedback pre-freeze.
 
 **Ship criterion:** a stranger installs it, wraps a loop in five lines,
@@ -64,10 +74,15 @@ sees a real detection, on a fresh machine, in under ten minutes.
 - **No hosted backend, dashboard, or web UI.** This is the line that
   matters most. A dashboard = re-entering the platform tier = death.
   Terminal render + JSON only.
-- **No LLM-judge detector as default.** The identity is
-  deterministic/cheap/local. An optional `metr_safety` LLM detector may
-  ship **off by default**, clearly flagged as the one thing that sends
-  data out of the process — never the pitch, never the default.
+- **No LLM-judge in the default install.** The identity is
+  deterministic/cheap/local — layer one, always-on, what runs in a
+  rollout worker. The judge is the **opt-in second layer**
+  (`pip install loopcanary[judge]`), consuming layer-one signals for
+  cheap-filter → expensive-confirm. v1.0 ships the *cascade interface*
+  that makes this buildable, but **not** the judge itself, a reference
+  cascade, or precision numbers — those are v1.1+/research. When the
+  judge does ship it stays off by default and is the one thing that
+  sends data out of the process, flagged loudly.
 - **No data leaving the process by default.** Zero egress is a
   load-bearing property (it's why training-time works). The only
   exception is opt-in detectors the user explicitly turns on.
@@ -84,8 +99,14 @@ sees a real detection, on a fresh machine, in under ten minutes.
 
 ## v1.1+ (parking lot — not now, not a design constraint)
 
+- **CLI-agent adapters** (Claude Code / Codex) — thin adapters that
+  consume the CLI's hooks / OpenTelemetry export / session logs and run
+  the deterministic detectors alongside the process. Out-of-process by
+  nature; per-tool maintenance; demand-driven.
 - Native LangChain / LlamaIndex integrations.
-- `metr_safety` and other opt-in LLM detectors, matured.
+- **The judge, matured** — `loopcanary[judge]` opt-in second layer, a
+  cascade reference implementation, and the "how much precision the
+  judge adds over the cheap layer" numbers (research/paper territory).
 - Compression↔degradation correlation analysis.
 - More deterministic detectors as public-dataset recall reveals gaps.
 
