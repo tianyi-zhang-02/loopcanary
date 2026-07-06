@@ -44,3 +44,13 @@ here, and continue.
 - **`summary()` returns per-detector signal counts by severity.** The
   brief says "per-detector counts." Returns
   `{detector_name: {"INFO": n, "WARN": n, "ALERT": n, "total": n}}`.
+
+- **Claude Code adapter emits one event per tool_use, at result time.** The
+  transcript pairs an assistant `tool_use` with a later user `tool_result`
+  by `tool_use_id`; the event is emitted when the result arrives, so both
+  action and output fingerprints are populated. An unpaired `tool_use`
+  (no matching result yet) emits nothing rather than a half-event. All
+  format assumptions live in `_parse_record` + the pairing loop; unknown
+  record types and malformed lines are skipped, never fatal. Transcript
+  mode is **as-written (near-real-time), not pre-step** — noted in the
+  module docstring so no one mistakes it for an in-loop hook.
