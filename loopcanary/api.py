@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Callable, Iterable, Mapping
+from typing import Literal
 
 from loopcanary.detectors import default_detectors
 from loopcanary.protocol import Detector, Severity, Signal, fan_out
@@ -123,5 +124,5 @@ class Canary:
         self.reset()
         return self
 
-    def __exit__(self, *exc: object) -> bool:
+    def __exit__(self, *exc: object) -> Literal[False]:
         return False

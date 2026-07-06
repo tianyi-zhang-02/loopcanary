@@ -1,200 +1,202 @@
 # loopcanary
 
-**The pytest of agent-loop health.** A pip-installable, in-process
-Python library that catches your agent's loop going wrong —
-reasoning loops, null progress, context pressure, cost run-away —
-with cheap deterministic checks that run *inside* the loop.
+**The pytest of agent-loop health.** A pip-installable, in-process Python
+library that watches an agent loop from *inside* your process and emits
+structured signals when the loop starts to degrade — the same action on
+repeat, no new output, context ballooning without progress.
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
-[![Status: v1.0 in development](https://img.shields.io/badge/status-v1.0%20in%20development-orange.svg)](docs/pivot_v1_agentic.md)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Status: v0.1.0](https://img.shields.io/badge/status-v0.1.0-orange.svg)](SCOPE.md)
 
-No backend. No dashboard. No LLM judge. No data leaving your process.
-It runs in production **and** inside a training rollout worker, where a
-per-trace LLM judge is cost-absurd but a hash-based repeated-action
-check is free.
+No backend. No dashboard. No LLM judge in the core. No network I/O. No data
+leaves your process. The core is stdlib-only with zero runtime
+dependencies, which means it runs in production **and** inside a training
+rollout worker — where a per-trace LLM judge is cost-absurd but a
+hash-based repeated-action check costs microseconds.
 
-> **Status: v1.0 in development.** This repo currently holds the
-> data-model seed (`src/loopcanary/core/`). The `watch()` API below is
-> the target design, specified in
-> [`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md) and
-> [`docs/v1_scope.md`](docs/v1_scope.md) — not yet implemented. Star
-> the repo to follow; API-shape feedback is wanted now, before the
-> surface locks at v1.0.
+```bash
+pip install loopcanary   # (once published; for now, pip install -e .)
+```
+
+## Quickstart
+
+Wrap **any loop you drive in your own Python process** — a hand-rolled
+`while` loop, an agent SDK loop, or an RL rollout worker — in about five
+lines:
+
+```python
+from loopcanary import Canary
+
+canary = Canary(on_signal=lambda s: print(f"[{s.severity.name}] {s.detector}: {s.message}"))
+
+for step in agent_loop():
+    for signal in canary.observe_raw(action=step.action, output=step.result, tokens=step.context_tokens):
+        handle(signal)   # log it, break the loop, penalize the rollout — your call
+
+for detector, counts in canary.summary().items():
+    print(detector, counts)   # end-of-run digest
+```
+
+`observe_raw` fingerprints the action and output for you and auto-increments
+the step counter. If you already build event objects, feed them directly:
+
+```python
+from loopcanary import Canary, LoopEvent, fingerprint
+
+canary = Canary()
+event = LoopEvent(
+    step=0,
+    action_type="tool:bash",
+    action_fingerprint=fingerprint({"cmd": "python train.py --resume"}),
+    output_fingerprint=fingerprint("FileNotFoundError: checkpoint.pt not found"),
+    tokens_in_context=5123,
+)
+signals = canary.observe(event)
+```
+
+One `Canary` per loop (or per rollout). It is **not thread-safe by
+design** — locks would tax the per-event hot path, and the intended shape
+is one instance per loop. Run many loops in parallel? Give each its own.
+
+See [`examples/stuck_loop_demo.py`](examples/stuck_loop_demo.py) for a
+runnable stuck-agent demo, and
+[`examples/rollout_shape_demo.py`](examples/rollout_shape_demo.py) for the
+in-RL-rollout usage shape.
 
 ## Why this exists
 
-Everyone built Datadog for agents. Nobody built the pytest.
+The tracing platforms (LangSmith, Langfuse, Phoenix) **record and display**
+— they show you the loop in a waterfall *after* the fact, and you find the
+problem by squinting at a UI or writing an LLM-judge eval. None of them is a
+thing you `import` that runs the check *in your process, in your loop, right
+now, for free, offline*. loopcanary is a library, not a platform — and that
+is the whole point. The moment it grows a backend or a dashboard it
+re-enters the platform tier and loses the one property that makes it useful
+inside a training loop: it costs almost nothing and nothing leaves the box.
 
-The tracing platforms (LangSmith, Langfuse, Phoenix, MLflow, SigNoz)
-**record and display** — they show you the loop in a trace waterfall
-*after* the fact, and you find it by squinting at the UI or writing an
-LLM-judge eval. The detection products (Raindrop, Laminar) **do**
-detect loops — but only as platform-attached, send-your-traces-out,
-LLM-judge-or-paid services.
-
-None of them are a library you `import` that runs the check *in your
-process, in your loop, right now, for free*. That's the gap.
-
-**"Why not just a Langfuse eval?"** Because loopcanary is zero-infra
-and in-process: it works offline, in air-gapped environments, and
-inside training loops — none of which a platform-attached LLM-judge
-eval can do. If you already run Langfuse or Phoenix, loopcanary is
-complementary, not a replacement: it emits events compatible with the
-OpenTelemetry `gen_ai.*` conventions, so you can pipe its detections
-straight into your existing traces.
-
-## Quickstart (target API — v1.0)
-
-```bash
-pip install loopcanary
-```
-
-Wrap **any agent loop you run in your own Python process** in five
-lines — the Claude Agent SDK, LangChain, LlamaIndex, a hand-rolled
-`while` loop, or an RL rollout worker:
-
-```python
-import loopcanary as lc
-
-with lc.watch(
-    detectors=[
-        lc.detectors.repeated_action(threshold=3),   # same tool+args N times
-        lc.detectors.null_progress(window=5),         # no state change in K steps
-        lc.detectors.context_pressure(warn_at=0.8),   # nearing the context window
-        lc.detectors.cost_burn_rate(usd_per_min=0.50),
-    ],
-    on_alarm=lambda sig: print(f"⚠️  {sig.detector}: {sig.summary}"),  # live one-liner
-) as run:
-    result = agent.run(task)     # your loop, unchanged
-
-run.report.render()              # post-run digest; run.trace(step=N) for the deep dive
-```
-
-Three integration shapes, all zero-config:
-
-```python
-# 1. context manager (above)  — recommended
-# 2. wrap the model-API client — Anthropic, OpenAI, any provider
-client = lc.instrument(Anthropic(), detectors=[...])   # every call is now watched
-# 3. decorator
-@lc.watch(detectors=[...])
-def run_task(agent, task): ...
-```
-
-**The integration point is the model API, not the product.** You can't
-wrap Claude Code or Codex — they're closed CLI *products*, separate
-processes. But if you're calling the **same models via their API** —
-the Anthropic or OpenAI client — inside a loop you drive, that's
-in-process and loopcanary wraps it directly with `instrument(client)`.
-Provider-agnostic: any model, any provider, as long as you own the
-loop. (Monitoring the closed CLI products themselves needs a thin
-hooks/OTel adapter — that's v1.1, see
-[`docs/v1_scope.md`](docs/v1_scope.md).)
+There is a longer reason, too. As agentic systems scale, oversight stops
+being a human watching every step and becomes *instrumented
+monitorability* — cheap always-on signals wired into the loop, with scarce
+human and model attention spent only where those signals point. Attention
+isn't removed, it's rationed. That is exactly the shape here: a deterministic
+first layer scans every step at microsecond cost, and a more expensive
+second layer (an LLM judge, a learned probe — third-party, not in this
+package) is meant to fire only on the windows the cheap layer flags. The
+cascade is that attention hierarchy in miniature: machine signal → optional
+judge → human. v1 ships the cheap layer and the stable interface the
+expensive layers plug into; it makes no claim about how well any of it
+catches real failures — that is what the validation harness below is for.
 
 ## What it detects (v1.0)
 
-All deterministic, all zero-cost — no model calls, no network:
+All deterministic, all in-process — no model calls, no network:
 
-| detector | fires when |
-|---|---|
-| `repeated_action` | the same tool call with the same args repeats N times (hash-based) |
-| `null_progress` | no observable state change over K steps |
-| `context_pressure` | input tokens cross a fraction of the model's context window |
-| `cost_burn_rate` | spend velocity exceeds a USD/min threshold |
-| `compression_frequency` | context-compaction events fire above a rate |
+| detector | fires when | default thresholds |
+|---|---|---|
+| `repeated_action` | the same action fingerprint recurs within a sliding window | WARN at `n=3`, ALERT at `2n`, `window=10` |
+| `null_progress` | output fingerprints stop diversifying over a window | `window=8`, WARN when distinct ≤ `k=2`, ALERT when distinct = 1 |
+| `context_pressure` | context crosses an absolute token budget, or balloons fast while output stays stuck | `abs_threshold=100_000`, `rate_threshold=2000`/step, `window=10`, `diversity_max=2` |
 
-Detectors are a `Protocol` — bring your own in ~20 lines.
+Signals carry a `severity` (`INFO` / `WARN` / `ALERT`), the `step`, a stable
+`pattern` string, a human `message`, and an `evidence` dict. Detectors fire
+on the **rising edge** (once per threshold crossing), not once per step, so
+they don't spam. `context_pressure` self-disables with a single `INFO` if
+events carry no token counts, rather than silently doing nothing.
 
 ### Detectors are layered
 
-Detectors are layered: deterministic detectors run always-on at
-near-zero cost; optional detectors (LLM-judge, learned probes) can
-consume their signals for second-stage confirmation. **v1 ships the
-deterministic layer; the cascade interface is stable.**
+Detectors are a `runtime_checkable` `Protocol` with a `consumes` set that
+declares whether a detector reads raw events, other detectors' signals, or
+both. That makes the layering explicit: the deterministic detectors consume
+`event`s and run always-on at near-zero cost; a second-stage detector (an
+LLM judge, a learned probe) can declare `consumes={"signal"}` and fire only
+on the cheap layer's flagged windows — the standard cheap-filter →
+expensive-confirm shape.
 
-Concretely, the cheap layer scans every step and flags suspicious
-windows; an opt-in second-stage detector fires *only on the flagged
-windows* — "is this repeated action really stuck, or a legit retry?"
-That's the standard cheap-filter → expensive-confirm shape: the judge
-runs on the <5% of steps that were flagged, not a forward pass on
-every step, and it filters the cheap layer's false positives while the
-cheap layer keeps recall. It's a notch smarter than running two
-detectors in parallel.
+**v1 ships only the deterministic layer plus the stable cascade interface.**
+The judge itself is deliberately *not* in this package — it would be the one
+thing that sends data out of your process, and it belongs to whoever needs
+it, as a third-party detector. Bring your own in ~20 lines by implementing
+the `Detector` protocol.
 
-The default install is **pure deterministic** — that never changes;
-it's what runs in a rollout worker. The judge is an opt-in extra
-(`pip install loopcanary[judge]`): install it and you gain a detector;
-don't and the core is a gram lighter. It is the one thing that sends
-data out of your process, and it says so loudly. The judge itself, a
-cascade reference implementation, and the precision-uplift numbers are
-v1.1+/research — v1.0 ships only the interface that makes the cascade
-buildable, not a refactor.
+## Validation
 
-## Where it runs that platforms can't
+Detector quality is measured, not asserted.
+[`scripts/validate_trace.py`](scripts/validate_trace.py) scores the
+detectors against a labeled trajectory dataset (e.g. Patronus's TRACE),
+reporting per-detector and pooled precision / recall / F1 under two
+detection definitions (strict = ALERT-only, lenient = WARN-or-above).
 
-The in-process, deterministic design is the only shape that works at
-**training time**. Inside a GRPO rollout worker doing 16 rollouts per
-prompt, a per-trace LLM judge is economically impossible — but a
-hash-based repeated-action detector costs nothing and runs in the
-worker. If you're doing RL on agents (NeMo-RL and friends),
-loopcanary is the loop-health check you can actually afford to run on
-every rollout.
+```bash
+python scripts/validate_trace.py --dataset path/to/trace.jsonl --detection lenient
+```
 
-## Progressive disclosure
+| dataset | detection | detector | precision | recall | F1 |
+|---|---|---|---|---|---|
+| — | — | — | _[to be filled by a validation run]_ | _[…]_ | _[…]_ |
 
-One short alarm while the loop runs; escalate to full trace only when
-it trips.
+These numbers are intentionally blank. They get filled by running the script
+above on a real dataset — never by hand. Until then, treat the detector list
+as a design, not a benchmarked result.
 
-- **live** — a one-line alarm streamed via `on_alarm` (`⚠️ repeated_action: bash("ls") ×3 at steps 27–29`)
-- **digest** — `run.report.render()`, a few lines: what fired, when, cost/context summary
-- **trace** — `run.trace(step=27)`, the full event stream around a fire
+## Adapters
 
-## Honest competitive picture
+loopcanary reads canonical `LoopEvent`s. Adapters map foreign traces onto
+them; foreign-format assumptions live only in the adapter, never in the
+detectors.
 
-- **Tracing platforms** (LangSmith, Langfuse, Phoenix, MLflow, SigNoz)
-  — mature, converging on OTel GenAI semconv. They record; you detect
-  by eye or by eval. **Substrate, not competitor** — pipe loopcanary's
-  OTel-compatible events into them.
-- **Detection products** (Raindrop, Laminar) — they *do* detect loops,
-  but platform-attached, traces-leave-your-box, LLM-judge or paid
-  ($65/mo+). loopcanary is the in-process, offline, free-at-training-time
-  alternative.
-- **Academic detectors** (TRACER et al.) — metrics in papers, not
-  installable software.
+- **Claude Code** — `loopcanary.adapters.claude_code.ClaudeCodeSession`
+  parses a Claude Code JSONL transcript into events (one per tool call,
+  paired with its result), tolerating malformed lines and unknown record
+  types. It also has a CLI:
 
-**The moat is deliberately thin** and the scope freeze is the strategy:
-the moment loopcanary grows a dashboard or a backend, it re-enters the
-platform tier and gets annihilated. It stays a library. On purpose.
-See [`docs/v1_scope.md`](docs/v1_scope.md) for the hard in/out line.
+  ```bash
+  python -m loopcanary.adapters.claude_code --watch <transcript.jsonl>
+  ```
 
-## Validation (roadmap, not a claim)
+  Caveat: transcript mode detects **as-written** (near-real-time), not
+  pre-step. The in-process `Canary` is where pre-step callbacks are real.
 
-Detectors will be validated against a public labelled-failure
-trajectory dataset (Patronus's TRACE, hundreds of labelled failure
-runs). When that lands, this README will state **recall on public
-data** — not "detects loops, trust me." Until then, treat the detector
-list as a design, not a benchmarked result.
+Wanted adapters (Codex, LangGraph, AutoGen, OpenTelemetry) are tracked in
+[`docs/BACKLOG.md`](docs/BACKLOG.md).
 
-## What's here now
+## Limitations (honest)
 
-`src/loopcanary/core/` — the trajectory data model (`TrajectoryEvent`
-variants, `SemanticVerdict`) the SDK is built on. Everything above is
-target design in [`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md)
-+ [`docs/v1_scope.md`](docs/v1_scope.md).
+- **Deterministic only.** These detectors catch *structural* degeneration —
+  repetition, stalled output, context blowup. They do not judge semantics: a
+  loop that "makes progress" toward a wrong goal looks healthy to them. That
+  is what the (out-of-core) judge layer is for.
+- **Fingerprint-based.** Detection is only as good as your fingerprints. If
+  two meaningfully-different actions hash the same, or a nominally-identical
+  action carries a volatile field (a timestamp, a UUID), tune what you feed
+  in — `fingerprint(..., volatile={...})` strips caller-marked keys.
+- **No effectiveness claim yet.** The README ships with blank validation
+  numbers on purpose (see above).
+- **Not thread-safe.** One `Canary` per loop. By design.
 
-The reward-hacking-monitor *robustness research* (the batch harness,
-MALT experiments, the SaTML finding) lives in a **separate** repo,
-[`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress).
-Independent; neither repo imports the other.
+## Non-goals (v1, frozen)
+
+No dashboard, UI, server, or network I/O. No LLM-judge detector in the core
+(the protocol supports one as a third-party plugin; we don't ship it). No
+entropy/logprob detectors (the schema carries the field; no detector
+consumes it yet). No auto-intervention or loop-breaking (loopcanary
+*detects*; what you do is yours). No aggregate "health score." The full
+in/out line is in [`SCOPE.md`](SCOPE.md); deferred ideas are in
+[`docs/BACKLOG.md`](docs/BACKLOG.md).
+
+The scope freeze is the design, not a lack of ambition: staying a library is
+what keeps loopcanary cheap enough to run where platforms can't.
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). API-shape feedback on the
-`watch()` signature, the `Detector` protocol, and the event schema is
-the most useful thing you can give right now — the surface locks under
-semver at the v1.0 tag.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). The most useful contributions right
+now are **new adapters** and **new detectors** implementing the `Detector`
+protocol — start from the wanted lists in
+[`docs/BACKLOG.md`](docs/BACKLOG.md). API-shape feedback on the `Canary`
+surface, the `Detector` protocol, and the `LoopEvent` schema is especially
+welcome before the interface locks under semver at the v1.0 tag.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+Apache-2.0 — see [`LICENSE`](LICENSE).

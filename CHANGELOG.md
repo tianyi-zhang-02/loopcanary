@@ -11,8 +11,9 @@ that no version has been tagged yet.
 - **Direction pivot (2026-06-08):** From a batch CLI that stress-tests
   AI safety monitors on saved MALT trajectories to an open-source
   Python library for streaming agent-loop observability. Full plan in
-  [`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md). No v1.0 code
-  has landed yet; the v0.1 batch shape remains runnable on `main`.
+  [`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md). The v1.0
+  library has now landed (see Added below); it is a fresh stdlib-only
+  build that supersedes the v0.1 batch prototype.
 - **README rewritten** to reflect the pivot; the batch prototype
   install instructions are preserved in a "Running the v0.1 batch
   prototype (today)" section.
@@ -29,6 +30,19 @@ that no version has been tagged yet.
   for the pre-v1.0 window.
 
 ### Added
+- **loopcanary v1.0 library build** — the in-process detection core:
+  `LoopEvent` / `ModelSignals` schema and `fingerprint()` (stdlib-only);
+  `Severity` / `Signal` value types and a `runtime_checkable` `Detector`
+  protocol with a `consumes` cascade interface and `fan_out()`; three
+  deterministic detectors (`repeated_action`, `null_progress`,
+  `context_pressure`); the `Canary` in-process API
+  (`observe` / `observe_raw` / `summary` / `reset` / context-manager);
+  a Claude Code JSONL transcript adapter with a `--watch` CLI;
+  `scripts/validate_trace.py` (precision/recall/F1 vs. a labeled dataset,
+  no hard-coded results); and `examples/` demos. Version `0.1.0`,
+  Apache-2.0, Python ≥3.10, zero runtime dependencies. 62 tests, ruff +
+  mypy clean, ~95% coverage. **Not yet tagged** — the version tag is a
+  human post-merge step.
 - **`docs/pivot_v1_agentic.md`** (PR #8) — canonical v1.0 spec.
 - **`docs/score_parser_diagnosis.md`,
    `docs/prompt_and_format_diagnosis.md`,
