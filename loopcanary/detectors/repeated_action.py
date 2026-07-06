@@ -8,7 +8,9 @@ Fires when the same ``action_fingerprint`` appears ``n`` times within a
 sliding window of ``window`` steps. Severity escalates: WARN the first time
 the count reaches ``n``, ALERT if it reaches ``2*n``. It fires on the
 *rising edge* of each threshold, not every step past it, so a stuck loop
-produces two signals (WARN then ALERT), not a hundred.
+produces two signals (WARN then ALERT), not a hundred. If that fingerprint
+leaves the sliding window and later gets stuck again, the detector re-arms
+and can emit a new WARN / ALERT pair.
 
 Defaults ``n=3, window=10``: three identical actions inside ten steps is a
 strong loop signal with very few false positives — legitimate retries are
@@ -47,10 +49,17 @@ class RepeatedAction:
         if not isinstance(item, LoopEvent):
             return []
         fp = item.action_fingerprint
-        self._recent.append((item.step, fp))
-        # Evict anything older than the window (by step distance).
+
+        # Evict anything older than the window before adding this event. If a
+        # previously-fired fingerprint has fully left the active window, re-arm
+        # it so a later independent stuck episode can signal again.
         while self._recent and item.step - self._recent[0][0] >= self.window:
             self._recent.popleft()
+        active_fingerprints = {f for (_, f) in self._recent}
+        self._warned.intersection_update(active_fingerprints)
+        self._alerted.intersection_update(active_fingerprints)
+
+        self._recent.append((item.step, fp))
 
         matching = [s for (s, f) in self._recent if f == fp]
         count = len(matching)

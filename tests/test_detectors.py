@@ -53,6 +53,19 @@ def test_repeated_action_alerts_at_2n_and_fires_once_per_threshold() -> None:
     assert len(sigs) == 2
 
 
+def test_repeated_action_rearms_after_fingerprint_leaves_window() -> None:
+    det = RepeatedAction(n=2, window=4)
+    first_episode = [ev(step, action="same") for step in range(4)]
+    recovery = [ev(step, action=f"other-{step}") for step in range(4, 8)]
+    second_episode = [ev(step, action="same") for step in range(8, 12)]
+
+    sigs = feed(det, first_episode + recovery + second_episode)
+    sevs = [signal.severity for signal in sigs if signal.detector == "repeated_action"]
+
+    assert sevs.count(Severity.WARN) == 2
+    assert sevs.count(Severity.ALERT) == 2
+
+
 def test_repeated_action_distinct_actions_no_fire() -> None:
     det = RepeatedAction(n=3, window=10)
     sigs = feed(det, [ev(i, action=f"act{i}") for i in range(10)])

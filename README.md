@@ -114,8 +114,24 @@ All deterministic, all in-process — no model calls, no network:
 Signals carry a `severity` (`INFO` / `WARN` / `ALERT`), the `step`, a stable
 `pattern` string, a human `message`, and an `evidence` dict. Detectors fire
 on the **rising edge** (once per threshold crossing), not once per step, so
-they don't spam. `context_pressure` self-disables with a single `INFO` if
-events carry no token counts, rather than silently doing nothing.
+they don't spam. `repeated_action` re-arms after a fingerprint leaves the
+sliding window, so a later independent stuck episode can fire again.
+`context_pressure` emits a single `INFO` when it sees tokenless events, skips
+them, and resumes automatically if later events carry token counts.
+
+## Recommended policies
+
+loopcanary detects; your host loop decides what to do. A reasonable default
+policy is:
+
+- `INFO` — record diagnostic metadata and continue.
+- `WARN` — log the signal and continue, or mark the trajectory for review.
+- `ALERT` — stop the loop, penalize the rollout, or escalate the flagged
+  window to a slower judge/human review.
+
+See [`examples/intervention_policy_demo.py`](examples/intervention_policy_demo.py)
+for a runnable stop-on-`ALERT` policy that strips volatile request IDs and
+timestamps before fingerprinting.
 
 ### Detectors are layered
 
