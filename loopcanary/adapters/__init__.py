@@ -7,6 +7,7 @@ foreign-format assumptions live; the core detectors never see raw traces.
 Shipped in v1:
 
 - :mod:`loopcanary.adapters.claude_code` — Claude Code JSONL transcripts.
+- :mod:`loopcanary.adapters.jsonl_trace` — generic one-event-per-line JSONL traces.
 
 Wanted (see ``docs/BACKLOG.md``): Codex, LangGraph, AutoGen, OpenTelemetry.
 """

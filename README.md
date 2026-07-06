@@ -187,6 +187,24 @@ detectors.
   Caveat: transcript mode detects **as-written** (near-real-time), not
   pre-step. The in-process `Canary` is where pre-step callbacks are real.
 
+- **Generic JSONL trace** — `loopcanary.adapters.jsonl_trace.JsonlTrace`
+  maps one JSON object per line onto one `LoopEvent`. This is the simplest
+  path for homegrown agent runners, handoff systems, and early Claude↔Codex
+  bridge traces before a framework-specific adapter exists:
+
+  ```python
+  from loopcanary import Canary
+  from loopcanary.adapters.jsonl_trace import JsonlTrace
+
+  canary = Canary()
+  for event in JsonlTrace("handoff-trace.jsonl", action_volatile={"request_id"}).events():
+      for signal in canary.observe(event):
+          print(signal)
+  ```
+
+  Default fields are `step`, `action_type`, `action`, `output`, `error`,
+  `tokens_in_context`, and `metadata`; use `JsonlTraceFields` to rename them.
+
 Wanted adapters (Codex, LangGraph, AutoGen, OpenTelemetry) are tracked in
 [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
