@@ -8,12 +8,23 @@ run inside an RL rollout worker.
 Public API::
 
     from loopcanary import Canary, LoopEvent, Signal, Severity, fingerprint
-
-The full API is wired as the milestones land; see ``docs/`` and ``SCOPE.md``.
 """
 
 from __future__ import annotations
 
+from loopcanary.api import Canary
+from loopcanary.protocol import Detector, Severity, Signal
+from loopcanary.schema import LoopEvent, ModelSignals, fingerprint
+
 __version__ = "0.1.0"
 
-__all__ = ["__version__"]
+__all__ = [
+    "__version__",
+    "Canary",
+    "LoopEvent",
+    "ModelSignals",
+    "Signal",
+    "Severity",
+    "Detector",
+    "fingerprint",
+]
