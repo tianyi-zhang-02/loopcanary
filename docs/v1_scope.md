@@ -19,8 +19,11 @@ doesn't go in v1.0.
 
 **Core API**
 - `lc.watch(detectors=[...], on_alarm=...)` context manager.
-- `lc.instrument(callable, detectors=[...])` — wrap any callable
-  (covers LangChain, custom loops, Claude Agent SDK).
+- `lc.instrument(client_or_callable, detectors=[...])` — wrap the
+  model-API client (Anthropic, OpenAI, any provider) or any callable.
+  This is the primary integration point: monitor the *model API* inside
+  a loop you drive — provider-agnostic, works with the same models
+  Claude Code / Codex use, without touching the closed CLI products.
 - `@lc.watch(...)` decorator.
 - `Detector` protocol — cheap, called per event. Users bring their own
   in ~20 lines.

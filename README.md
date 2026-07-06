@@ -75,20 +75,22 @@ Three integration shapes, all zero-config:
 
 ```python
 # 1. context manager (above)  — recommended
-# 2. wrap any callable         — LangChain, custom loops, anything
-graded = lc.instrument(my_llm_call, detectors=[...])
+# 2. wrap the model-API client — Anthropic, OpenAI, any provider
+client = lc.instrument(Anthropic(), detectors=[...])   # every call is now watched
 # 3. decorator
 @lc.watch(detectors=[...])
 def run_task(agent, task): ...
 ```
 
-**Claude Code / Codex and other CLI agents** aren't in-process Python
-loops you wrap — they're separate processes. loopcanary reaches them
-through a thin **adapter** that consumes what the CLI emits (Claude
-Code hooks, OpenTelemetry export, or session logs) and runs the same
-detectors alongside it. Those adapters are v1.1 (see
-[`docs/v1_scope.md`](docs/v1_scope.md)); v1.0 is the in-process library
-for loops you control.
+**The integration point is the model API, not the product.** You can't
+wrap Claude Code or Codex — they're closed CLI *products*, separate
+processes. But if you're calling the **same models via their API** —
+the Anthropic or OpenAI client — inside a loop you drive, that's
+in-process and loopcanary wraps it directly with `instrument(client)`.
+Provider-agnostic: any model, any provider, as long as you own the
+loop. (Monitoring the closed CLI products themselves needs a thin
+hooks/OTel adapter — that's v1.1, see
+[`docs/v1_scope.md`](docs/v1_scope.md).)
 
 ## What it detects (v1.0)
 
