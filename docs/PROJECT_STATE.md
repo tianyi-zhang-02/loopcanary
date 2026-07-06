@@ -1,42 +1,50 @@
 # Project State
 
-*Last updated: 2026-06-08, by Claude Code session. Branch base:
-`63669fd` (origin/main tip, PR #8 pivot plan merged). Pivot to
-agent-loop observability accepted; implementation not yet started.*
+*Last updated: 2026-07-05, by Claude Code session. Two-repo split
+executed: this repo (`loopcanary`) is now the SDK tool, seeded with
+the data model; the batch harness + SaTML finding moved to the
+separate `monitorstress` repo.*
 
 ## Identity
 
-`loopcanary` is transitioning from **"batch CLI that
-stress-tests AI safety monitors on saved MALT trajectories"**
-(v0.1, on `main`, functional) to **"open-source Python library for
-agent-loop observability with named degradation detectors and
-compression / memory event surfacing"** (v1.0, in development).
+`loopcanary` is an **open-source agent-loop observability SDK** (in
+development): named degradation detectors + compression/memory event
+surfacing over an agent's execution loop, via a `watch()` context
+manager. **Tool, not paper** — success is software metrics (installs
+cleanly, hooks into a loop in a few lines, honest README, people use
+it), not novelty. No paper obligation is attached to this repo.
 
-Canonical spec for v1.0: [`docs/pivot_v1_agentic.md`](pivot_v1_agentic.md).
+This repository currently holds the **data-model seed** —
+`src/loopcanary/core/` (`TrajectoryEvent`, `Trajectory`,
+`SemanticVerdict`). The v1.0 SDK surface is specified in
+[`docs/pivot_v1_agentic.md`](pivot_v1_agentic.md) and not yet built.
+
+**Sibling repo:** [`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress)
+— the research harness for the SaTML CoT-monitor-robustness paper
+(the batch CLI, MALT, transformations, the finding). Independent;
+neither repo imports the other.
 
 ## Current phase
 
-**Post-pivot-acceptance, pre-v1.0-implementation.** The pivot plan
-merged as PR #8 (`63669fd`). This restructure PR then updates
-governance docs (README, PROJECT_STATE, COLLAB_CONTEXT, SUPERSEDED
-markers on pre-pivot content) to catch the repo up with the new
-direction. No v1.0 code has landed. The v0.1 batch shape remains
-runnable on `main`.
+**Post-split, pre-v1.0-implementation.** The two-track decision
+(2026-07-05) separated the SDK (this repo) from the research harness
+(monitorstress repo). This repo was stripped to the data model +
+SDK plan. No SDK code (`watch`, detectors) has landed yet.
 
 ## Active work
 
-- **This PR (branch `docs/pivot-restructure`)** — README rewrite,
-  PROJECT_STATE / COLLAB_CONTEXT refresh, SUPERSEDED markers on
-  pre-pivot docs, commit the three uncommitted diagnosis docs as
-  historical record, add CONTRIBUTING and CHANGELOG placeholders.
-  **Owner: Tianyi** (review). No code changes; no rename; no
-  directory restructure.
-- **Pending: v0.1 Sonnet re-run (Q5-adjacent).** Pre-v1.0-code
-  prerequisite from the pivot plan. Runs on Tianyi's local shell
-  (sandbox has no working Anthropic credentials). Confirms whether
-  the batch shape can measure anything real, which informs how
-  aggressive to be in the v1.0 architectural break from v0.1's
-  assumptions. Estimated cost ~$0.90.
+- **This PR (branch `split/strip-to-sdk-seed`)** — strips loopcanary
+  to the SDK seed: removes the batch harness (now in monitorstress),
+  slims deps to `pydantic`, rewrites `__init__` / README / pyproject
+  for the SDK framing. **Owner: Tianyi** (review + merge — freeze holds).
+- **Next: build the v1.0 SDK** per `docs/pivot_v1_agentic.md` —
+  extended `TrajectoryEvent` variants → `Detector` protocol →
+  `watch()` context manager → Anthropic-SDK instrumentation. Not
+  started.
+- **Research track (separate repo, hard Sept-29 clock):** the
+  `drop_reasoning`→chance finding lives in `monitorstress`; the
+  ship-vs-strengthen decision is open there. Does **not** block or
+  depend on this repo.
 
 ## Open decisions
 

@@ -31,20 +31,22 @@ to a streaming SDK was proposed and accepted 2026-06-08. See
 plan — scope, roadmap, competition, differentiation, risks, and the
 four-commit implementation sequence.
 
-**A v0.1 batch prototype exists on `main`.** It's a CLI
-(`loopcanary run`) that stress-tests AI safety monitors against
-saved MALT trajectories. It works, has 111 tests, and stays runnable.
-But it's not the direction the project is going. Its
-`TrajectoryEvent` and `SemanticVerdict` data model is the foundation
-v1.0 builds on; almost everything above the data model reshapes.
+**This repository currently contains the data-model seed** the SDK is
+built on — `TrajectoryEvent` and `SemanticVerdict` in
+[`src/loopcanary/core/`](src/loopcanary/core/) — plus the v1.0 plan.
+The `watch()` / detector surface is not yet implemented.
 
-If you want to run the batch prototype today, its docs are marked
-SUPERSEDED but still accurate:
-[`docs/spec.md`](docs/spec.md),
-[`docs/writing_a_monitor.md`](docs/writing_a_monitor.md).
+**The batch experiments moved out.** The pre-pivot batch harness
+(MALT ingestion, structural transformations, the METR reward-hacking
+monitor, the AUROC report card) and the SaTML research finding now
+live in a separate repository —
+[`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress) —
+which is independent of this one (neither imports the other). If you
+came here for the reward-hacking-monitor robustness experiments,
+that's the repo you want.
 
 If you want the v1.0 SDK: not yet available. Watch the repository or
-subscribe to the changelog.
+the changelog.
 
 ## What v1.0 will detect
 
@@ -111,28 +113,6 @@ Explicit non-goals: no hosted dashboard, no team collaboration
 features, no cross-run analytics-as-a-service. Not a startup — an
 open-source library.
 
-## Running the v0.1 batch prototype (today)
-
-For the current batch shape — still functional, no v1.0 API yet:
-
-```bash
-git clone https://github.com/tianyi-zhang-02/loopcanary
-cd loopcanary
-uv sync --all-extras
-export HF_TOKEN=hf_...           # https://huggingface.co/settings/tokens
-export ANTHROPIC_API_KEY=sk-ant-...
-uv run loopcanary run --model haiku --limit 60 --budget-usd 5.00
-```
-
-The MALT dataset is gated — accept the terms at
-[huggingface.co/datasets/metr-evals/malt-public](https://huggingface.co/datasets/metr-evals/malt-public)
-before the first run.
-
-`--model` accepts `haiku`, `sonnet`, or `sonnet-4-6` (aliases for
-canonical Anthropic model ids). Every run's JSON output records the
-resolved model id at the top level so "which model ran" is always a
-verifiable fact.
-
 ## Related work
 
 The generic-tracing space is crowded and mature. `loopcanary` is
@@ -146,14 +126,11 @@ narrower and deliberately so.
 - **Inspect AI** (UK AISI) — Python eval framework with monitoring
   hooks. `loopcanary` is complementary; a future release may ship
   an Inspect AI adapter.
-- **METR MALT** — the reward-hacking-monitor benchmark that motivated
-  the original v0.1 batch tool. Still used inside `loopcanary` as
-  the validation corpus for the safety-detector plug-in specifically.
-
-Full write-ups live in
-[`docs/reading_notes.md`](docs/reading_notes.md) (Griffin et al. on
-misalignment classifiers, Radharapu et al. on judge calibration,
-METR MALT release, debate-literature follow-ups).
+- **[`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress)** —
+  the sibling research harness. Where loopcanary's `metr_safety`
+  detector reuses METR's reward-hacking prompt, monitorstress is
+  where that monitor's robustness is studied empirically (the SaTML
+  finding). Separate repo; not a dependency.
 
 ## Contributing
 
@@ -174,16 +151,10 @@ under semver at the v1.0 tag.
 - [`docs/SESSION_PROTOCOLS.md`](docs/SESSION_PROTOCOLS.md) —
   cross-session AI-assisted development discipline
 - [`CHANGELOG.md`](CHANGELOG.md) — release notes
-- Historical decision records preserved as SUPERSEDED docs:
-  [`spec.md`](docs/spec.md),
-  [`architecture.md`](docs/architecture.md),
-  [`related-work.md`](docs/related-work.md),
-  [`exploit-taxonomy.md`](docs/exploit-taxonomy.md), the pivot
-  history in [`pivot_decision.md`](docs/pivot_decision.md), and the
-  batch-shape diagnostic trail
-  ([`score_parser_diagnosis.md`](docs/score_parser_diagnosis.md),
-  [`prompt_and_format_diagnosis.md`](docs/prompt_and_format_diagnosis.md),
-  [`prompt_parity_verification.md`](docs/prompt_parity_verification.md)).
+- The project's pre-pivot history, the batch experiments, the
+  diagnostic trail, and the research finding moved to the
+  [`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress)
+  repository during the two-repo split.
 
 ## License
 
