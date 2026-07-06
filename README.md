@@ -1,163 +1,167 @@
 # loopcanary
 
-**Diagnose when your agent's loop is degrading, its context is compressing, and its cost is running away.**
+**The pytest of agent-loop health.** A pip-installable, in-process
+Python library that catches your agent's loop going wrong —
+reasoning loops, null progress, context pressure, cost run-away —
+with cheap deterministic checks that run *inside* the loop.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/tianyi-zhang-02/loopcanary/ci.yml?branch=main&label=ci)](https://github.com/tianyi-zhang-02/loopcanary/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![Status: v1.0 in development](https://img.shields.io/badge/status-v1.0%20in%20development-orange.svg)](docs/pivot_v1_agentic.md)
 
-`loopcanary` is an open-source Python library for **agent-loop
-observability**. It watches an agent's execution as it happens and
-diagnoses when its behaviour is going off-rails — the same tool call
-firing over and over, silent context compression, memory writes that
-never get recalled, cost run-away, or a safety monitor raising an
-alarm. It emits a per-run timeline you can inspect after the fact
-or stream live during execution.
+No backend. No dashboard. No LLM judge. No data leaving your process.
+It runs in production **and** inside a training rollout worker, where a
+per-trace LLM judge is cost-absurd but a hash-based repeated-action
+check is free.
 
-This is not another generic tracer. LangSmith, Weave, Arize Phoenix,
-and Braintrust already cover event capture and cost dashboards.
-`loopcanary` covers the two things they underserve today:
-**degradation diagnosis** (structured detectors that name the failure
-mode, not just record it) and **compression / memory event surfacing**
-(Claude's auto-compact and similar behaviours made visible and
-correlated with downstream outcomes).
+> **Status: v1.0 in development.** This repo currently holds the
+> data-model seed (`src/loopcanary/core/`). The `watch()` API below is
+> the target design, specified in
+> [`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md) and
+> [`docs/v1_scope.md`](docs/v1_scope.md) — not yet implemented. Star
+> the repo to follow; API-shape feedback is wanted now, before the
+> surface locks at v1.0.
 
-## Status
+## Why this exists
 
-**v1.0 SDK in development.** The pivot from a batch stress-test CLI
-to a streaming SDK was proposed and accepted 2026-06-08. See
-[`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md) for the full
-plan — scope, roadmap, competition, differentiation, risks, and the
-four-commit implementation sequence.
+Everyone built Datadog for agents. Nobody built the pytest.
 
-**This repository currently contains the data-model seed** the SDK is
-built on — `TrajectoryEvent` and `SemanticVerdict` in
-[`src/loopcanary/core/`](src/loopcanary/core/) — plus the v1.0 plan.
-The `watch()` / detector surface is not yet implemented.
+The tracing platforms (LangSmith, Langfuse, Phoenix, MLflow, SigNoz)
+**record and display** — they show you the loop in a trace waterfall
+*after* the fact, and you find it by squinting at the UI or writing an
+LLM-judge eval. The detection products (Raindrop, Laminar) **do**
+detect loops — but only as platform-attached, send-your-traces-out,
+LLM-judge-or-paid services.
 
-**The batch experiments moved out.** The pre-pivot batch harness
-(MALT ingestion, structural transformations, the METR reward-hacking
-monitor, the AUROC report card) and the SaTML research finding now
-live in a separate repository —
-[`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress) —
-which is independent of this one (neither imports the other). If you
-came here for the reward-hacking-monitor robustness experiments,
-that's the repo you want.
+None of them are a library you `import` that runs the check *in your
+process, in your loop, right now, for free*. That's the gap.
 
-If you want the v1.0 SDK: not yet available. Watch the repository or
-the changelog.
+**"Why not just a Langfuse eval?"** Because loopcanary is zero-infra
+and in-process: it works offline, in air-gapped environments, and
+inside training loops — none of which a platform-attached LLM-judge
+eval can do. If you already run Langfuse or Phoenix, loopcanary is
+complementary, not a replacement: it emits events compatible with the
+OpenTelemetry `gen_ai.*` conventions, so you can pipe its detections
+straight into your existing traces.
 
-## What v1.0 will detect
+## Quickstart (target API — v1.0)
 
-The initial detector set:
-
-| Detector | Purpose | Runs |
-|---|---|---|
-| `repeated_action` | Same tool call with same args firing N times in a row | Zero cost |
-| `context_pressure` | Input tokens above a fraction of the model's context window | Zero cost |
-| `cost_burn_rate` | Spend velocity above USD-per-minute threshold | Zero cost |
-| `null_progress` | No observable state change over K steps | Zero cost |
-| `compression_frequency` | Context compression events firing above rate threshold | Zero cost |
-| `metr_safety` | METR's published reward-hacking monitor prompt, run periodically | LLM call |
-
-Detectors are a `Protocol`. Users register their own with ~20 lines
-of Python.
-
-## What v1.0 will look like
-
-The **v1.0 target API** — designed, not implemented yet. Do not
-treat this as working code. Source of truth:
-[`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md#v10-scope--tier-1-concrete-in-scope).
-
-```python
-import loopcanary as ms
-
-with ms.watch(
-    agent_id="research-assistant",
-    detectors=[
-        ms.detectors.repeated_action(threshold=3),
-        ms.detectors.context_pressure(warn_at=0.8),
-        ms.detectors.cost_burn_rate(usd_per_min_max=0.50),
-        ms.detectors.metr_safety(model="haiku"),
-        ms.detectors.null_progress(window_steps=5),
-    ],
-    output="./run.json",
-) as run:
-    result = my_agent.run(task)
-
-run.report.render()  # Rich timeline in the terminal
+```bash
+pip install loopcanary
 ```
 
-Two additional integration modes are in the plan: Anthropic SDK
-instrumentation (`ms.instrument(client)`) and a function decorator
-(`@ms.watch(...)`).
+Wrap your agent loop in five lines. Works with any loop — here it is
+around a **Claude Agent SDK / Claude Code**-style run:
 
-## Roadmap
+```python
+import loopcanary as lc
 
-- **v0.1** *(shipped)* — batch CLI, stress-tests a monitor over saved
-  MALT trajectories. Historical shape; remains runnable but not the
-  primary interface.
-- **v1.0** *(in development)* — Python SDK. `pip install loopcanary`;
-  `import loopcanary as ms`; `with ms.watch(...) as run:`.
-  Zero-config default, working output in under 10 minutes on a fresh
-  machine. Ships with Claude Agent SDK integration + a generic
-  wrap-any-callable API so LangChain users aren't locked out. Initial
-  detector set above, a timeline report renderer, per-run JSON export.
-- **v1.1** *(after v1.0)* — native LangChain integration, more
-  detectors, more example integrations.
-- **v2.0** *(later)* — local TUI/web dashboard for live streaming
-  visualisation and multi-run comparison.
+with lc.watch(
+    detectors=[
+        lc.detectors.repeated_action(threshold=3),   # same tool+args N times
+        lc.detectors.null_progress(window=5),         # no state change in K steps
+        lc.detectors.context_pressure(warn_at=0.8),   # nearing the context window
+        lc.detectors.cost_burn_rate(usd_per_min=0.50),
+    ],
+    on_alarm=lambda sig: print(f"⚠️  {sig.detector}: {sig.summary}"),  # live one-liner
+) as run:
+    result = agent.run(task)     # your loop, unchanged
 
-Explicit non-goals: no hosted dashboard, no team collaboration
-features, no cross-run analytics-as-a-service. Not a startup — an
-open-source library.
+run.report.render()              # post-run digest; run.trace(step=N) for the deep dive
+```
 
-## Related work
+Three integration shapes, all zero-config:
 
-The generic-tracing space is crowded and mature. `loopcanary` is
-not trying to be a general observability platform; the niche is
-narrower and deliberately so.
+```python
+# 1. context manager (above)  — recommended
+# 2. wrap any callable         — LangChain, custom loops, anything
+graded = lc.instrument(my_llm_call, detectors=[...])
+# 3. decorator
+@lc.watch(detectors=[...])
+def run_task(agent, task): ...
+```
 
-- **LangSmith / Weave / Arize Phoenix / Braintrust** — mature
-  LLM-tracing platforms. `loopcanary` differs by focusing on
-  named degradation detectors and compression / memory event
-  surfacing rather than generic event capture.
-- **Inspect AI** (UK AISI) — Python eval framework with monitoring
-  hooks. `loopcanary` is complementary; a future release may ship
-  an Inspect AI adapter.
-- **[`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress)** —
-  the sibling research harness. Where loopcanary's `metr_safety`
-  detector reuses METR's reward-hacking prompt, monitorstress is
-  where that monitor's robustness is studied empirically (the SaTML
-  finding). Separate repo; not a dependency.
+## What it detects (v1.0)
+
+All deterministic, all zero-cost — no model calls, no network:
+
+| detector | fires when |
+|---|---|
+| `repeated_action` | the same tool call with the same args repeats N times (hash-based) |
+| `null_progress` | no observable state change over K steps |
+| `context_pressure` | input tokens cross a fraction of the model's context window |
+| `cost_burn_rate` | spend velocity exceeds a USD/min threshold |
+| `compression_frequency` | context-compaction events fire above a rate |
+
+Detectors are a `Protocol` — bring your own in ~20 lines. An optional,
+**opt-in** LLM detector (`metr_safety`, off by default) exists for
+reward-hacking checks; it is the one thing that sends data out of your
+process, and it says so loudly.
+
+## Where it runs that platforms can't
+
+The in-process, deterministic design is the only shape that works at
+**training time**. Inside a GRPO rollout worker doing 16 rollouts per
+prompt, a per-trace LLM judge is economically impossible — but a
+hash-based repeated-action detector costs nothing and runs in the
+worker. If you're doing RL on agents (NeMo-RL and friends),
+loopcanary is the loop-health check you can actually afford to run on
+every rollout.
+
+## Progressive disclosure
+
+One short alarm while the loop runs; escalate to full trace only when
+it trips.
+
+- **live** — a one-line alarm streamed via `on_alarm` (`⚠️ repeated_action: bash("ls") ×3 at steps 27–29`)
+- **digest** — `run.report.render()`, a few lines: what fired, when, cost/context summary
+- **trace** — `run.trace(step=27)`, the full event stream around a fire
+
+## Honest competitive picture
+
+- **Tracing platforms** (LangSmith, Langfuse, Phoenix, MLflow, SigNoz)
+  — mature, converging on OTel GenAI semconv. They record; you detect
+  by eye or by eval. **Substrate, not competitor** — pipe loopcanary's
+  OTel-compatible events into them.
+- **Detection products** (Raindrop, Laminar) — they *do* detect loops,
+  but platform-attached, traces-leave-your-box, LLM-judge or paid
+  ($65/mo+). loopcanary is the in-process, offline, free-at-training-time
+  alternative.
+- **Academic detectors** (TRACER et al.) — metrics in papers, not
+  installable software.
+
+**The moat is deliberately thin** and the scope freeze is the strategy:
+the moment loopcanary grows a dashboard or a backend, it re-enters the
+platform tier and gets annihilated. It stays a library. On purpose.
+See [`docs/v1_scope.md`](docs/v1_scope.md) for the hard in/out line.
+
+## Validation (roadmap, not a claim)
+
+Detectors will be validated against a public labelled-failure
+trajectory dataset (Patronus's TRACE, hundreds of labelled failure
+runs). When that lands, this README will state **recall on public
+data** — not "detects loops, trust me." Until then, treat the detector
+list as a design, not a benchmarked result.
+
+## What's here now
+
+`src/loopcanary/core/` — the trajectory data model (`TrajectoryEvent`
+variants, `SemanticVerdict`) the SDK is built on. Everything above is
+target design in [`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md)
++ [`docs/v1_scope.md`](docs/v1_scope.md).
+
+The reward-hacking-monitor *robustness research* (the batch harness,
+MALT experiments, the SaTML finding) lives in a **separate** repo,
+[`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress).
+Independent; neither repo imports the other.
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). Issue reports and
-discussion are welcome before v1.0 lands; **API-shape feedback is
-especially valuable right now** because the public surface locks
-under semver at the v1.0 tag.
-
-## Documentation
-
-- [`docs/pivot_v1_agentic.md`](docs/pivot_v1_agentic.md) — v1.0
-  plan, scope, roadmap, competition, risks, open questions
-- [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) — where the
-  project is right now (kept fresh across sessions)
-- [`docs/COLLAB_CONTEXT.md`](docs/COLLAB_CONTEXT.md) — framing
-  history and owner preferences for AI collaborators working across
-  sessions
-- [`docs/SESSION_PROTOCOLS.md`](docs/SESSION_PROTOCOLS.md) —
-  cross-session AI-assisted development discipline
-- [`CHANGELOG.md`](CHANGELOG.md) — release notes
-- The project's pre-pivot history, the batch experiments, the
-  diagnostic trail, and the research finding moved to the
-  [`monitorstress`](https://github.com/tianyi-zhang-02/monitorstress)
-  repository during the two-repo split.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). API-shape feedback on the
+`watch()` signature, the `Detector` protocol, and the event schema is
+the most useful thing you can give right now — the surface locks under
+semver at the v1.0 tag.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). Cite as
-`Zhang, T. (2026). loopcanary.`
-https://github.com/tianyi-zhang-02/loopcanary
+MIT — see [`LICENSE`](LICENSE).
