@@ -204,6 +204,11 @@ detectors.
 
   Default fields are `step`, `action_type`, `action`, `output`, `error`,
   `tokens_in_context`, and `metadata`; use `JsonlTraceFields` to rename them.
+  A minimal line looks like:
+
+  ```json
+  {"step":0,"action_type":"handoff","action":{"instruction":"fix tests","request_id":"r1"},"output":{"summary":"same failure"},"tokens_in_context":1200,"metadata":{"session_id":"s1"}}
+  ```
 
 Wanted adapters (Codex, LangGraph, AutoGen, OpenTelemetry) are tracked in
 [`docs/BACKLOG.md`](docs/BACKLOG.md).
